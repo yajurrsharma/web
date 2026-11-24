@@ -1,0 +1,14 @@
+{% extends "accounts/_layout.html" %}
+{% load store %}
+{% block title %}My account — {{ SITE_NAME }}{% endblock %}
+{% block account %}
+<h1 class="mb-3">Namaste, {{ user.get_short_name }}</h1>
+{% if not user.is_verified %}<div class="alert alert-warning">Please <a href="{% url 'accounts:resend_verification' %}">verify your email</a> before placing orders.</div>{% endif %}
+<h2 class="h4 mt-4">Recent orders</h2>
+{% if recent_orders %}
+  {% include "orders/_order_table.html" with orders=recent_orders %}
+  <a href="{% url 'orders:list' %}">See all orders</a>
+{% else %}
+  <div class="panel-quiet"><p class="mb-2">You haven't placed an order yet.</p><a class="btn btn-primary" href="{% url 'products:shop' %}">Start shopping</a></div>
+{% endif %}
+{% endblock %}

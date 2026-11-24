@@ -1,0 +1,17 @@
+{% load store %}
+<div class="summary">
+  <div class="summary-row"><span>Items ({{ quote.item_count }})</span><span>{{ quote.subtotal|inr }}</span></div>
+  {% for name, amount in quote.offers_applied %}{% if amount %}<div class="summary-row" style="color:var(--ok)"><span>🎉 {{ name }}</span><span>−{{ amount|inr }}</span></div>{% endif %}{% endfor %}
+  {% if quote.coupon_discount %}<div class="summary-row" style="color:var(--ok)"><span>Coupon {{ quote.coupon_code }}</span><span>−{{ quote.coupon_discount|inr }}</span></div>{% endif %}
+  {% if quote.prepaid_discount %}<div class="summary-row" style="color:var(--ok)"><span>Prepaid discount</span><span>−{{ quote.prepaid_discount|inr }}</span></div>{% endif %}
+  {% for g in quote.gift_lines %}<div class="summary-row" style="color:var(--ok)"><span>🎁 Free gift: {{ g.variant }}</span><span>FREE</span></div>{% endfor %}
+  <div class="summary-row"><span>Delivery{% if quote.cod_fee %} + COD fee{% endif %}</span><span>{% if quote.shipping_gross %}{{ quote.shipping_gross|inr }}{% else %}Free{% endif %}</span></div>
+  {% if quote.round_off %}<div class="summary-row"><span>Round off</span><span>{{ quote.round_off|inr }}</span></div>{% endif %}
+  <div class="summary-row summary-total"><span>Total</span><span>{{ quote.grand_total|inr }}</span></div>
+  <div class="text-muted small">
+    {% if quote.prices_include_gst %}Includes GST of {{ quote.tax_total|inr }}{% else %}GST {{ quote.tax_total|inr }} added{% endif %}
+    {% if quote.is_intra_state is True %}(CGST {{ quote.cgst_total|inr }} + SGST {{ quote.sgst_total|inr }}){% elif quote.is_intra_state is False %}(IGST){% endif %}
+  </div>
+  {% if quote.total_savings %}<div class="small mt-1 fw-semibold" style="color:var(--ok)">🎉 You save {{ quote.total_savings|inr }} on this order</div>{% endif %}
+  {% for hint in quote.offer_hints %}<div class="small mt-1 offer-hint">💡 {{ hint }}</div>{% endfor %}
+</div>

@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}GST invoice {{ invoice.number }} for order {{ order.order_number }}{% endautoescape %}

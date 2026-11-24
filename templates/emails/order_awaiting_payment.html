@@ -1,0 +1,18 @@
+{% extends "emails/_base.html" %}{% load store %}
+{% block body %}
+<p>Thank you, {{ order.customer_name }}!</p>
+<p>We have reserved your order <strong>{{ order.order_number }}</strong>. Please pay <strong>{{ order.grand_total|inr }}</strong> by <strong>{{ order.payment_due_by|date:"j M Y, g:i A" }}</strong>, otherwise the order is cancelled automatically.</p>
+{% if order.payment_method == "upi" %}
+<p style="background:#FAF3E3;padding:12px;border-radius:4px;">Pay by UPI to <strong>{{ store.upi_id }}</strong> ({{ store.upi_payee_name }})<br>Write <strong>{{ order.order_number }}</strong> in the payment note.</p>
+{% else %}
+<table role="presentation" cellpadding="4" cellspacing="0" style="background:#FAF3E3;border-radius:4px;font-size:14px;">
+<tr><td>Account name</td><td><strong>{{ store.bank_account_name }}</strong></td></tr>
+<tr><td>Account number</td><td><strong>{{ store.bank_account_number }}</strong></td></tr>
+<tr><td>IFSC</td><td><strong>{{ store.bank_ifsc }}</strong></td></tr>
+<tr><td>Bank</td><td>{{ store.bank_name }}{% if store.bank_branch %}, {{ store.bank_branch }}{% endif %}</td></tr>
+<tr><td>Remarks</td><td><strong>{{ order.order_number }}</strong></td></tr>
+</table>
+{% endif %}
+<p>After paying, enter the <strong>UTR / reference number</strong> on your order page so we can match your payment. We dispatch your order once the payment reaches our account.</p>
+<p style="margin:20px 0;"><a href="{{ SITE_URL }}{{ order.get_absolute_url }}" style="background:#6E1423;color:#ffffff;padding:10px 18px;border-radius:4px;text-decoration:none;display:inline-block;">Enter payment reference</a></p>
+{% endblock %}

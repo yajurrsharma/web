@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ category.seo_title|default:category.name }} — {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}{{ category.meta_description|default:category.description|default:category.name }}{% endblock %}
+{% block og_title %}{{ category.name }}{% endblock %}
+{% block content %}
+<div class="container-shop">
+  {% include "products/_listing.html" %}
+  <h1 class="visually-hidden">{{ category.name }}</h1>
+  {% if category.description %}<div class="box mt-3"><p class="mb-0 text-muted">{{ category.description }}</p></div>{% endif %}
+</div>
+{% endblock %}

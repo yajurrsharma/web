@@ -1,0 +1,7 @@
+{% extends "emails/_base.html" %}{% load store %}
+{% block body %}
+<p>The customer says they paid <strong>{{ order.grand_total|inr }}</strong> by {{ order.get_payment_method_display }} for order <strong>{{ order.order_number }}</strong>.</p>
+<p>Reference (UTR): <strong>{{ order.payment_reference }}</strong></p>
+<p>Check your bank / UPI statement. If the money has arrived, open the order and press “Confirm payment received”.</p>
+<p style="margin:20px 0;"><a href="{{ SITE_URL }}/dashboard/orders/{{ order.order_number }}/" style="background:#6E1423;color:#ffffff;padding:10px 18px;border-radius:4px;text-decoration:none;display:inline-block;">Open order</a></p>
+{% endblock %}

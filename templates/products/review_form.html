@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% load store %}
+{% block title %}Review {{ product.name }} — {{ SITE_NAME }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="container" style="max-width:640px">
+  <div class="box mt-2">
+    <div class="d-flex gap-3 align-items-center mb-3">
+      {% if product.main_image %}<img src="{{ product.main_image|thumb:160 }}" alt="" style="width:72px;height:72px;object-fit:contain;background:#f7f7f7;border-radius:8px">{% endif %}
+      <div><h1 class="h4 mb-0">Write a review</h1><div class="text-muted">{{ product.name }}</div></div>
+    </div>
+    <form method="post" enctype="multipart/form-data" novalidate data-once>
+      {% csrf_token %}
+      <fieldset class="mb-3"><legend class="form-label fs-6 fw-bold">{{ form.rating.label }}</legend>
+        {% for radio in form.rating %}<div class="form-check">{{ radio.tag }} <label class="form-check-label stars" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label></div>{% endfor %}
+        {{ form.rating.errors }}
+      </fieldset>
+      {% for f in form %}{% if f.name != "rating" %}
+      <div class="mb-3"><label class="form-label" for="{{ f.id_for_label }}">{{ f.label }}</label>{{ f }}{{ f.errors }}</div>
+      {% endif %}{% endfor %}
+      <p class="small text-muted">Your first name and last initial are shown with the review, with a “Verified buyer” label. Reviews are checked before they appear.</p>
+      <button class="btn btn-cta px-4" type="submit" data-busy="Sending…">Submit review</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

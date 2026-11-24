@@ -1,0 +1,55 @@
+{% extends "dashboard/_layout.html" %}
+{% load store %}
+{% block title %}Products — Dashboard{% endblock %}
+{% block dash %}
+<div class="top-actions">
+  <div>
+    <h1>Products</h1>
+    <p class="subtitle mb-0">{{ counts.published }} published · {{ counts.draft }} draft · {{ counts.archived }} archived</p>
+  </div>
+  {% if perms.products.add_product %}<a class="btn btn-primary" href="{% url 'dashboard:product_create' %}">+ Add Product</a>{% endif %}
+</div>
+
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-5"><label class="visually-hidden" for="pq">Search</label><input class="form-control" id="pq" name="q" value="{{ q }}" placeholder="Search product name or SKU"></div>
+  <div class="col-6 col-md-3"><label class="visually-hidden" for="pc">Category</label>
+    <select class="form-select" id="pc" name="category"><option value="">All categories</option>{% for c in categories %}<option value="{{ c.pk }}"{% if category == c.pk|stringformat:"d" %} selected{% endif %}>{{ c }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><label class="visually-hidden" for="ps">Status</label>
+    <select class="form-select" id="ps" name="status"><option value="">Active (not archived)</option>{% for k, v in statuses %}<option value="{{ k }}"{% if k == status %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+  <div class="col-md-2"><button class="btn btn-secondary w-100" type="submit">Search</button></div>
+</form>
+
+<div class="panel">
+  <div class="table-responsive">
+  <table class="table align-middle mb-0">
+    <thead><tr><th scope="col"></th><th scope="col">Product</th><th scope="col">Category</th><th scope="col" class="text-end">Price</th><th scope="col" class="text-end">Stock</th><th scope="col">Status</th><th scope="col"></th></tr></thead>
+    <tbody>
+    {% for p in products %}
+      <tr>
+        <td style="width:56px">{% if p.main_image %}<img class="thumb" src="{{ p.main_image|thumb:120 }}" alt="">{% else %}<span class="thumb" aria-hidden="true"></span>{% endif %}</td>
+        <td><a href="{% url 'dashboard:product_edit' p.pk %}" class="fw-semibold text-decoration-none">{{ p.name }}</a>
+          <div class="small text-muted">{{ p.n_variants }} pack size{{ p.n_variants|pluralize }} · HSN {{ p.tax_class.hsn_code }} · GST {{ p.tax_class.gst_rate|pct }}{% if p.is_featured %} · ★ Featured{% endif %}</div></td>
+        <td>{{ p.category }}</td>
+        <td class="text-end">{% if p.min_price == None %}—{% elif p.min_price == p.max_price %}{{ p.min_price|inr }}{% else %}{{ p.min_price|inr }} – {{ p.max_price|inr }}{% endif %}</td>
+        <td class="text-end">{% if not p.total_stock %}<span class="stock-out">0</span>{% else %}{{ p.total_stock }}{% endif %}</td>
+        <td><span class="badge-s {{ p.status }}">{{ p.get_status_display }}</span></td>
+        <td class="text-end text-nowrap">
+          <a class="btn btn-sm btn-outline-burgundy" href="{% url 'dashboard:product_edit' p.pk %}">Edit</a>
+          {% if p.is_published %}<a class="btn btn-sm btn-link" href="{{ p.get_absolute_url }}" target="_blank" rel="noopener">View ↗</a>{% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="text-center text-muted py-5">No products found.{% if perms.products.add_product %} <a href="{% url 'dashboard:product_create' %}">Add your first product</a>.{% endif %}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+{% if page_obj.has_other_pages %}
+<nav class="mt-3" aria-label="Pages"><ul class="pagination">
+  {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="{% page_url page_obj.previous_page_number %}">Previous</a></li>{% endif %}
+  <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+  {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="{% page_url page_obj.next_page_number %}">Next</a></li>{% endif %}
+</ul></nav>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "dashboard/_layout.html" %}
+{% load store %}
+{% block title %}Dashboard — {{ SITE_NAME }}{% endblock %}
+{% block dash %}
+<h1>Dashboard</h1>
+<p class="subtitle">Today: {% now "l, j F Y" %}</p>
+{% for w in warnings %}<div class="alert alert-warning py-2">{{ w }}</div>{% endfor %}
+
+<div class="quick-actions">
+  {% if perms.products.add_product %}<a class="btn btn-primary" href="{% url 'dashboard:product_create' %}">+ Add Product</a>{% endif %}
+  {% if perms.inventory.add_stockmovement %}<a class="btn btn-success" href="{% url 'dashboard:stock_in' %}">+ Add Stock</a>{% endif %}
+  {% if perms.products.view_product %}<a class="btn btn-outline-burgundy" href="{% url 'dashboard:products' %}">All Products</a>{% endif %}
+  {% if perms.orders.manage_orders %}<a class="btn btn-outline-burgundy" href="{% url 'dashboard:orders' %}">Orders</a>{% endif %}
+  {% if perms.accounts.add_user %}<a class="btn btn-outline-burgundy" href="{% url 'admin:accounts_user_add' %}">+ Add Customer</a>{% endif %}
+  <a class="btn btn-outline-burgundy" href="{% url 'admin:index' %}">⚙ Admin Panel</a>
+</div>
+
+<div class="row g-3">
+  <div class="col-6 col-md-3"><div class="stat"><div class="label">Today's sales</div><div class="value">{{ w.today_sales|inr:0 }}</div><div class="hint">{{ w.today_orders }} order{{ w.today_orders|pluralize }}</div></div></div>
+  <div class="col-6 col-md-3"><div class="stat"><div class="label">This month</div><div class="value">{{ w.month_sales|inr:0 }}</div><div class="hint">{{ w.month_orders }} order{{ w.month_orders|pluralize }}</div></div></div>
+  <div class="col-6 col-md-3"><a class="stat" href="{% url 'dashboard:orders' %}?status=confirmed"><div class="label">To pack &amp; ship</div><div class="value">{{ w.to_fulfil }}</div><div class="hint">confirmed or processing</div></a></div>
+  <div class="col-6 col-md-3"><a class="stat" href="{% url 'dashboard:orders' %}?method=cod&payment=pending"><div class="label">COD to collect</div><div class="value">{{ w.cod_open }}</div><div class="hint">open COD orders</div></a></div>
+</div>
+<p class="small text-muted mt-2">All orders: {{ w.total_orders }} · Paid: {{ w.paid_orders }} · Unpaid: {{ w.unpaid_orders }} · Awaiting online payment: {{ w.awaiting_payment }}. Cancelled orders are excluded from sales.</p>
+
+<div class="row g-4 mt-1">
+  <div class="col-lg-7">
+    <div class="panel">
+      <h2 class="h5">Sales — last 14 days</h2>
+      <table class="table table-sm mb-0">
+        <caption class="visually-hidden">Daily sales for the last 14 days</caption>
+        <thead><tr><th scope="col">Day</th><th scope="col">Orders</th><th scope="col" style="width:45%">Sales</th><th scope="col" class="text-end">Amount</th></tr></thead>
+        <tbody>
+        {% for d in daily %}
+          <tr><td>{{ d.day|date:"D j M" }}</td><td>{{ d.orders }}</td>
+            <td><div style="height:10px;width:{{ d.pct }}%;min-width:{% if d.sales %}4px{% else %}0{% endif %};background:var(--burgundy);border-radius:2px" aria-hidden="true"></div></td>
+            <td class="text-end">{{ d.sales|inr:0 }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    {% if attention.requests or attention.refund_due %}
+    <div class="panel mb-4" style="border-color:var(--brass)">
+      <h2 class="h5">Needs attention</h2>
+      <ul class="list-unstyled mb-0">
+        {% for r in attention.requests %}<li class="py-1"><a href="{% url 'dashboard:order_detail' r.order.order_number %}">{{ r.order.order_number }}</a> — {{ r.get_kind_display }} {{ r.get_status_display|lower }}</li>{% endfor %}
+        {% for o in attention.refund_due %}<li class="py-1"><a href="{% url 'dashboard:order_detail' o.order_number %}">{{ o.order_number }}</a> — paid but {{ o.get_status_display|lower }}: refund due</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    <div class="panel mb-4">
+      <h2 class="h5">Low stock</h2>
+      {% if low_stock %}
+      <ul class="list-unstyled mb-0">{% for v in low_stock %}<li class="d-flex justify-content-between py-1"><span>{{ v }}</span><span class="{% if v.stock == 0 %}stock-out{% else %}stock-low{% endif %}">{{ v.stock }} left</span></li>{% endfor %}</ul>
+      <a class="small" href="{% url 'dashboard:inventory' %}?low=1">Restock in inventory</a>
+      {% else %}<p class="mb-0 text-muted">All products are above their low-stock levels.</p>{% endif %}
+    </div>
+    {% if space %}
+    <div class="panel mb-4">
+      <div class="d-flex justify-content-between align-items-baseline"><h2 class="h5">Hosting space</h2><a class="small" href="?storage=refresh">Recount</a></div>
+      <div class="fs-4 fw-bold">{{ space.total_mb }} MB{% if space.quota_mb %} <span class="fs-6 fw-normal text-muted">of {{ space.quota_mb }} MB</span>{% endif %}</div>
+      {% if space.percent is not None %}
+      <div class="progress my-2" role="progressbar" aria-label="Hosting space used" aria-valuenow="{{ space.percent }}" aria-valuemin="0" aria-valuemax="100" style="height:10px">
+        <div class="progress-bar {% if space.percent >= 80 %}bg-danger{% elif space.percent >= 60 %}bg-warning{% endif %}" style="width: {{ space.percent }}%"></div>
+      </div>
+      {% endif %}
+      <ul class="list-unstyled small mb-2">{% for r in space.rows %}<li class="d-flex justify-content-between"><span>{{ r.label }}</span><span>{{ r.mb }} MB</span></li>{% empty %}<li class="text-muted">No files yet.</li>{% endfor %}</ul>
+      <p class="small text-muted mb-0">Shop files only — your other apps on the same hosting account also use space.{% if not space.quota_mb %} Set STORAGE_QUOTA_MB in .env to see a warning before it fills up.{% endif %} Tip: put product videos on YouTube (no space used).</p>
+    </div>
+    {% endif %}
+    <div class="panel">
+      <h2 class="h5">Best sellers — 30 days</h2>
+      {% if best %}<ol class="mb-0 ps-3">{% for b in best %}<li>{{ b.product_name }}{% if b.variant_name != "Standard" %} ({{ b.variant_name }}){% endif %} — {{ b.qty }} sold</li>{% endfor %}</ol>
+      {% else %}<p class="mb-0 text-muted">No sales yet.</p>{% endif %}
+      {% if channels|length > 1 %}<hr class="rule-brass"><h3 class="h6">This month by channel</h3>{% for c in channels %}<div class="summary-row"><span>{{ c.channel|capfirst }}</span><span>{{ c.total|inr:0 }} ({{ c.n }})</span></div>{% endfor %}{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="panel mt-4">
+  <div class="d-flex justify-content-between"><h2 class="h5">Latest orders</h2><a href="{% url 'dashboard:orders' %}">All orders</a></div>
+  {% include "dashboard/_orders_table.html" with orders=recent %}
+</div>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load store %}
+{% block title %}Payment not completed — {{ SITE_NAME }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 600px">
+  <h1>Payment not completed</h1>
+  <p class="lead">Order {{ order.order_number }} for {{ order.grand_total|inr }} hasn't been paid.</p>
+  <p>If money was deducted from your account, don't pay again — it will be confirmed here automatically within a few minutes, or your bank will reverse it.</p>
+  {% if can_retry %}
+    <div class="d-flex flex-wrap gap-2 mt-3">
+      <a class="btn btn-primary" href="{% url 'payments:pay' order.order_number %}">Try paying again</a>
+      <a class="btn btn-outline-burgundy" href="{{ order.get_absolute_url }}">View order</a>
+    </div>
+    {% if order.payment_due_by %}<p class="small text-muted mt-3">This order is held for you until {{ order.payment_due_by|date:"g:i A, j M" }}.</p>{% endif %}
+  {% else %}
+    <p>This order can no longer be paid online. <a href="{% url 'cart:detail' %}">Go to your cart</a> or <a href="{% url 'core:contact' %}">contact us</a>.</p>
+  {% endif %}
+</div>
+{% endblock %}

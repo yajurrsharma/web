@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Grievance officer — {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 760px">
+  <h1>Grievance officer</h1>
+  <p class="mt-3">If you are not happy with an order, a product or our service, please tell us. For a damaged, wrong or missing item, the fastest way is <strong>Your orders → open the order → Report a problem</strong>.</p>
+  {% with contact=store.grievance_contact %}
+  {% if store.grievance_officer_name %}
+  <table class="table mt-3">
+    <tbody>
+      <tr><th scope="row">Name</th><td>{{ store.grievance_officer_name }}</td></tr>
+      {% if store.grievance_officer_designation %}<tr><th scope="row">Designation</th><td>{{ store.grievance_officer_designation }}</td></tr>{% endif %}
+      {% if store.legal_name %}<tr><th scope="row">Company</th><td>{{ store.legal_name }}</td></tr>{% endif %}
+      {% if store.full_address %}<tr><th scope="row">Address</th><td>{{ store.full_address }}</td></tr>{% endif %}
+      {% if contact.email %}<tr><th scope="row">Email</th><td><a href="mailto:{{ contact.email }}">{{ contact.email }}</a></td></tr>{% endif %}
+      {% if contact.phone %}<tr><th scope="row">Phone</th><td><a href="tel:{{ contact.phone }}">{{ contact.phone }}</a></td></tr>{% endif %}
+      {% if store.grievance_hours %}<tr><th scope="row">Working hours</th><td>{{ store.grievance_hours }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="panel-quiet mt-3">Grievance officer details will be published here shortly. Meanwhile, please <a href="{% url 'core:contact' %}">send us a message</a>{% if contact.email %} or email <a href="mailto:{{ contact.email }}">{{ contact.email }}</a>{% endif %}.</p>
+  {% endif %}
+  {% endwith %}
+  <h2 class="h5 mt-4">How we handle complaints</h2>
+  <ol>
+    <li>Write to us with your order number and the problem.</li>
+    <li>We acknowledge your complaint within <strong>48 hours</strong>.</li>
+    <li>We resolve it within <strong>1 month</strong> of receiving it.</li>
+  </ol>
+  <p class="small text-muted">If you are still not satisfied, you can contact the National Consumer Helpline: 1915 or <a href="https://consumerhelpline.gov.in" target="_blank" rel="noopener">consumerhelpline.gov.in</a>.</p>
+</div>
+{% endblock %}

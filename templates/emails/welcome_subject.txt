@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}Welcome to {{ store.store_name }}{% endautoescape %}

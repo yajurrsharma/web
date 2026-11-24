@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load store %}
+{% block title %}Track your order — {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 640px">
+  <h1 class="mb-3">Track your order</h1>
+  <form method="post" class="panel" novalidate>
+    {% csrf_token %}
+    <div class="mb-3"><label class="form-label" for="t-num">Order number</label>
+      <input class="form-control text-uppercase" id="t-num" name="order_number" placeholder="LLD-…" required value="{{ request.POST.order_number|default:'' }}"></div>
+    <div class="mb-3"><label class="form-label" for="t-email">Email used for the order</label>
+      <input class="form-control" type="email" id="t-email" name="email" required value="{{ request.POST.email|default:'' }}"></div>
+    <button class="btn btn-primary" type="submit">Track order</button>
+  </form>
+  {% if order %}
+  <div class="panel mt-4" role="status">
+    <h2 class="h4">{{ order.order_number }}</h2>
+    <p class="mb-2"><span class="status-pill s-{{ order.status }}">{{ order.get_status_display }}</span>
+      <span class="status-pill s-{{ order.payment_status }}">Payment: {{ order.get_payment_status_display }}</span></p>
+    <p class="mb-1">Placed {{ order.created_at|date:"j M Y" }} · {{ order.grand_total|inr }}</p>
+    {% if order.tracking_number %}<p class="mb-1">Courier: {{ order.courier_name }} — {{ order.tracking_number }}{% if order.tracking_url %} · <a href="{{ order.tracking_url }}" target="_blank" rel="noopener">courier tracking</a>{% endif %}</p>{% endif %}
+    {% if order.shipped_at %}<p class="mb-1">Shipped {{ order.shipped_at|date:"j M Y" }}</p>{% endif %}
+    {% if order.delivered_at %}<p class="mb-0">Delivered {{ order.delivered_at|date:"j M Y" }}</p>{% endif %}
+    <p class="small text-muted mt-2 mb-0">Log in to see full details and download your invoice.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

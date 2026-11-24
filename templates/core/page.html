@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} — {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}{{ page.meta_description|default:page.title }}{% endblock %}
+{% block og_title %}{{ page.title }}{% endblock %}
+{% block content %}
+<div class="container">
+  <article class="prose mx-auto" style="max-width: 72ch">
+    <h1 class="mb-4">{{ page.title }}</h1>
+    {% for kind, text in page.blocks %}
+      {% if kind == "h" %}<h2>{{ text }}</h2>{% else %}<p>{{ text|linebreaksbr }}</p>{% endif %}
+    {% endfor %}
+    <p class="text-muted small mt-5">Last updated {{ page.updated_at|date:"j F Y" }}</p>
+  </article>
+</div>
+{% endblock %}

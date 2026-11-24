@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% load store %}
+{% block title %}{{ product.seo_title|default:product.name }} — {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}{{ product.meta_description|default:product.short_description|default:product.name }}{% endblock %}
+{% block og_type %}product{% endblock %}
+{% block og_title %}{{ product.name }}{% endblock %}
+{% block og_description %}{{ product.short_description|default:product.name }}{% endblock %}
+{% block og_image %}{% if product.main_image %}<meta property="og:image" content="{{ request.scheme }}://{{ request.get_host }}{{ product.main_image.url }}">{% endif %}{% endblock %}
+{% block robots %}{% if is_preview %}<meta name="robots" content="noindex">{% endif %}{% endblock %}
+{% block extra_head %}<script type="application/ld+json">{{ jsonld }}</script>{% endblock %}
+{% block content %}
+<div class="container-shop">
+  {% if is_preview %}<div class="alert alert-warning">Staff preview — this product is <strong>{{ product.get_status_display }}</strong> and hidden from customers.</div>
+  {% elif selected %}<span hidden data-rv-product data-url="{{ product.get_absolute_url }}" data-name="{{ product.name }}" data-img="{% if product.main_image %}{{ product.main_image|thumb:480 }}{% endif %}" data-price="{{ selected.price|inr_short }}"></span>{% endif %}
+  <nav aria-label="Breadcrumb"><ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'products:shop' %}">Shop</a></li>
+    <li class="breadcrumb-item"><a href="{{ product.category.get_absolute_url }}">{{ product.category.name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ product.name|truncatechars:60 }}</li>
+  </ol></nav>
+
+  <div class="box">
+  <div class="row g-4">
+    <div class="col-lg-5">
+      <div class="pd-gallery">
+        {% if gallery or product.youtube_id %}
+        <div class="gallery-thumbs d-flex gap-2" aria-label="More images and videos">
+          {% if product.main_image %}<button type="button" data-gallery-thumb data-kind="image" data-src="{{ product.main_image.url }}" data-alt="{{ product.main_image_alt|default:product.name }}" aria-current="true" aria-label="Main image"><img src="{{ product.main_image|thumb:160 }}" alt=""></button>{% endif %}
+          {% for m in gallery %}
+            <button type="button" data-gallery-thumb data-kind="{{ m.kind }}" data-src="{{ m.file.url }}" data-alt="{{ m.alt_text|default:product.name }}" aria-current="false" aria-label="{% if m.kind == 'video' %}Play video{% else %}{{ m.alt_text|default:'Image' }} {{ forloop.counter }}{% endif %}">
+              {% if m.kind == "video" %}<span class="d-flex align-items-center justify-content-center h-100 small">▶</span>{% else %}<img src="{{ m.file|thumb:160 }}" alt="" loading="lazy">{% endif %}
+            </button>
+          {% endfor %}
+          {% if product.youtube_id %}
+            {# YouTube video: costs no hosting space; the player loads only when tapped. #}
+            <button type="button" class="yt-thumb" data-gallery-thumb data-kind="youtube" data-src="{{ product.youtube_id }}" data-alt="{{ product.name }} video" aria-current="false" aria-label="Play product video">
+              <img src="https://i.ytimg.com/vi/{{ product.youtube_id }}/mqdefault.jpg" alt="" loading="lazy"><span aria-hidden="true">▶</span>
+            </button>
+          {% endif %}
+        </div>
+        {% endif %}
+        <div class="gallery-main" data-gallery-main>
+          {% if product.main_image %}<img src="{{ product.main_image.url }}" alt="{{ product.main_image_alt|default:product.name }}" width="800" height="800">{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <form method="post" action="{% url 'cart:add' %}" data-once class="row g-4">
+        {% csrf_token %}
+        <div class="col-md-7">
+          {% if product.badge %}<span class="pd-badge">{{ product.get_badge_display }}</span>{% endif %}
+          <h1 class="pd-title">{{ product.name }}</h1>
+          <div class="pd-brand"><a href="{% url 'products:shop' %}">Visit the {{ SITE_NAME }} Store</a>
+            {% if product.rating_count %} · <a href="#reviews" class="stars text-decoration-none">{{ product.rating_avg|stars }}<span class="num">{{ product.rating_avg|floatformat:1 }} · {{ product.rating_count }} review{{ product.rating_count|pluralize }}</span></a>{% endif %}
+          </div>
+          <hr class="pd-hr">
+          {% if selected %}
+          <div class="pd-price">
+            {% if selected.discount_percent %}<span class="off" data-off>-{{ selected.discount_percent }}%</span>{% endif %}<span class="amt" data-price-short>{{ selected.price|inr_short }}</span>
+            <div class="mrp-line" data-mrp-line{% if selected.mrp <= selected.price %} hidden{% endif %}>M.R.P.: <s data-mrp>{{ selected.mrp|inr }}</s>
+              <span class="save-txt" data-save>{% if selected.savings %}You save {{ selected.savings|inr_short }} ({{ selected.discount_percent }}%){% endif %}</span></div>
+            <div class="small">Inclusive of all taxes{% if selected.net_quantity %} · Net quantity: <strong data-netqty>{{ selected.net_quantity }}</strong>{% endif %}</div>
+          </div>
+          {% if variants|length > 1 %}
+          <fieldset class="mt-3">
+            <legend class="fs-6 mb-2"><strong>Size / pack:</strong></legend>
+            <div class="d-flex flex-wrap gap-2">
+              {% for v in variants %}
+              <div class="variant-option">
+                <input type="radio" name="variant_id" id="v{{ v.pk }}" value="{{ v.pk }}" data-variant-input
+                       data-price="{{ v.price|inr }}" data-price-short="{{ v.price|inr_short }}" data-mrp="{{ v.mrp|inr }}"
+                       data-off="{% if v.discount_percent %}-{{ v.discount_percent }}%{% endif %}" data-in-stock="{{ v.in_stock|yesno:'1,0' }}"
+                       data-save="{% if v.savings %}You save {{ v.savings|inr_short }} ({{ v.discount_percent }}%){% endif %}" data-netqty="{{ v.net_quantity }}"
+                       data-max="{{ v.stock|default:1 }}"
+                       data-stock-text="{% if not v.in_stock %}Out of stock{% elif v.is_low_stock %}Only {{ v.stock }} left in stock{% else %}In stock{% endif %}"
+                       data-stock-class="{% if not v.in_stock %}stock-out{% elif v.is_low_stock %}stock-low{% else %}stock-in{% endif %}"
+                       {% if v.pk == selected.pk %}checked{% endif %}>
+                <label for="v{{ v.pk }}">{{ v.name }}<br><small>{{ v.price|inr_short }}</small></label>
+              </div>
+              {% endfor %}
+            </div>
+          </fieldset>
+          {% else %}
+          <input type="hidden" name="variant_id" value="{{ selected.pk }}">
+          {% endif %}
+          <hr class="pd-hr">
+          <div class="pd-icons">
+            {% if store.cod_enabled %}<div><span class="ic" aria-hidden="true">💵</span>Cash on Delivery</div>{% endif %}
+            <div><span class="ic" aria-hidden="true">🔒</span>Secure transaction</div>
+            <div><span class="ic" aria-hidden="true">🧾</span>GST invoice</div>
+            <div><span class="ic" aria-hidden="true">🚚</span>Delivered to your door</div>
+          </div>
+          <hr class="pd-hr">
+          {% endif %}
+
+          {% if product.short_description or product.description %}
+          <section class="pd-about">
+            <h2 class="h6 fw-bold">About this item</h2>
+            <ul>
+              {% if product.short_description %}<li>{{ product.short_description }}</li>{% endif %}
+              {% for para in product.description.splitlines %}{% if para.strip %}<li>{{ para }}</li>{% endif %}{% endfor %}
+            </ul>
+          </section>
+          {% endif %}
+          {% with feats=product.key_features_list gets=product.what_you_get_list uses=product.best_for_list %}
+          {% if feats %}<section class="pd-about mt-3"><h2 class="h6 fw-bold">Key features</h2><ul class="tick-list">{% for f in feats %}<li>{{ f }}</li>{% endfor %}</ul></section>{% endif %}
+          {% if gets %}<section class="pd-about mt-3"><h2 class="h6 fw-bold">What you get</h2><ul>{% for g in gets %}<li>{{ g }}</li>{% endfor %}</ul></section>{% endif %}
+          {% if uses %}<section class="pd-about mt-3"><h2 class="h6 fw-bold">Best for</h2><div class="d-flex flex-wrap gap-2">{% for u in uses %}<span class="chip">{{ u }}</span>{% endfor %}</div></section>{% endif %}
+          {% endwith %}
+          {% if product.video_url and not product.youtube_id %}<p class="mt-3"><a href="{{ product.video_url }}" target="_blank" rel="noopener">▶ Watch the product video</a></p>{% endif %}
+        </div>
+
+        <div class="col-md-5">
+          <div class="buybox">
+            {% if selected %}
+            <div class="amt" data-price>{{ selected.price|inr }}</div>
+            <div class="delivery-check mb-2" data-delivery-check>
+              <label class="form-label small fw-semibold mb-1" for="dc-pin">📍 Check delivery</label>
+              <div class="input-group input-group-sm">
+                <input class="form-control" id="dc-pin" inputmode="numeric" maxlength="6" placeholder="Enter PIN code" autocomplete="postal-code">
+                <button class="btn btn-outline-secondary" type="button" data-dc-btn>Check</button>
+              </div>
+              <div class="small mt-1" data-dc-result aria-live="polite">{% if store.estimated_delivery_text %}<span class="text-muted">{{ store.estimated_delivery_text }}</span>{% endif %}</div>
+            </div>
+            <p class="mb-2"><span data-stock class="{% if not selected.in_stock %}stock-out{% elif selected.is_low_stock %}stock-low{% else %}stock-in{% endif %}">{% if not selected.in_stock %}Out of stock{% elif selected.is_low_stock %}Only {{ selected.stock }} left in stock{% else %}In stock{% endif %}</span></p>
+            <label class="form-label small mb-1" for="qty">Quantity:</label>
+            <input class="form-control qty-input" type="number" id="qty" name="quantity" value="1" min="1" max="{{ selected.stock|default:1 }}" data-qty>
+            <button class="btn btn-cta" type="submit" data-add-button data-busy="Adding…" {% if not selected.is_purchasable %}disabled{% endif %}>Add to Cart</button>
+            <button class="btn btn-cta-2" type="submit" name="buy_now" value="1" data-add-button {% if not selected.is_purchasable %}disabled{% endif %}>Buy Now</button>
+            <div class="secure">🔒 Secure transaction</div>
+            <div class="sold">
+              <span>Ships from</span><span>{{ SITE_NAME }}</span>
+              <span>Sold by</span><span>{{ store.trade_name|default:SITE_NAME }}</span>
+              <span>Payment</span><span>{% if store.cod_enabled %}Cash on Delivery, {% endif %}UPI, cards, net banking</span>
+            </div>
+            {% else %}
+            <p class="stock-out mb-0">This product is currently unavailable.</p>
+            {% endif %}
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  </div>
+
+  {% if selected %}
+  <div class="box mt-3">
+    <h2>Product information</h2>
+    <table class="table table-bordered pd-specs mb-0" style="max-width:760px">
+      <tr><th scope="row">Brand</th><td>{{ SITE_NAME }}</td></tr>
+      <tr><th scope="row">Category</th><td>{{ product.category.name }}</td></tr>
+      {% if variants|length == 1 and selected.name != "Standard" %}<tr><th scope="row">Pack</th><td>{{ selected.name }}</td></tr>{% endif %}
+      {% if selected.net_quantity %}<tr><th scope="row">Net quantity</th><td>{{ selected.net_quantity }}</td></tr>{% endif %}
+      <tr><th scope="row">M.R.P.</th><td>{{ selected.mrp|inr }} (inclusive of all taxes)</td></tr>
+      {% if product.fragrance %}<tr><th scope="row">Fragrance</th><td>{{ product.fragrance }}</td></tr>{% endif %}
+      {% if product.burn_time %}<tr><th scope="row">Burning time</th><td>{{ product.burn_time }}</td></tr>{% endif %}
+      {% if product.ingredients %}<tr><th scope="row">Ingredients</th><td>{{ product.ingredients }}</td></tr>{% endif %}
+      {% if product.manufacturer_name %}<tr><th scope="row">Manufactured by</th><td>{{ product.manufacturer_name }}{% if product.manufacturer_address %}, {{ product.manufacturer_address }}{% endif %}</td></tr>{% endif %}
+      {% if product.packer_details %}<tr><th scope="row">Packed / marketed by</th><td>{{ product.packer_details }}</td></tr>{% endif %}
+      <tr><th scope="row">Country of origin</th><td>{{ product.country_of_origin|default:"India" }}</td></tr>
+      <tr><th scope="row">Consumer care</th><td>{% if product.consumer_care %}{{ product.consumer_care }}{% else %}{{ store.support_phone }}{% if store.support_phone and store.support_email %} · {% endif %}{{ store.support_email }}{% endif %}</td></tr>
+      <tr><th scope="row">Item code (SKU)</th><td>{{ selected.sku }}</td></tr>
+      {% if selected.weight_grams %}<tr><th scope="row">Shipping weight</th><td>{{ selected.weight_grams }} g</td></tr>{% endif %}
+      {% if selected.length_cm and selected.width_cm and selected.height_cm %}<tr><th scope="row">Package size</th><td>{{ selected.length_cm }} × {{ selected.width_cm }} × {{ selected.height_cm }} cm</td></tr>{% endif %}
+    </table>
+  </div>
+  {% endif %}
+
+  {# ---- Reviews: verified buyers only, shown after staff approval ---- #}
+  <section class="box mt-3" id="reviews" aria-labelledby="rev-h">
+    <h2 id="rev-h">Customer reviews</h2>
+    {% if product.rating_count %}
+    <div class="row g-4">
+      <div class="col-md-4">
+        <div class="fs-2 fw-bold">{{ product.rating_avg|floatformat:1 }} <span class="fs-6 text-muted">out of 5</span></div>
+        <div class="stars fs-5">{{ product.rating_avg|stars }}</div>
+        <div class="small text-muted mb-2">{{ product.rating_count }} verified review{{ product.rating_count|pluralize }}</div>
+        {% for row in rating_bars %}
+        <div class="d-flex align-items-center gap-2 small"><span style="width:2.6em">{{ row.stars }} ★</span>
+          <div class="progress flex-grow-1" style="height:8px" role="progressbar" aria-label="{{ row.stars }} star" aria-valuenow="{{ row.pct }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:{{ row.pct }}%;background:#e7a10c"></div></div>
+          <span style="width:2.6em" class="text-end">{{ row.pct }}%</span></div>
+        {% endfor %}
+      </div>
+      <div class="col-md-8">
+        {% for r in reviews %}
+        <article class="review py-2 border-bottom">
+          <div class="stars">{{ r.rating|stars }}</div>
+          {% if r.title %}<h3 class="h6 fw-bold mb-1">{{ r.title }}</h3>{% endif %}
+          <div class="small text-muted mb-1">{{ r.author_name }} · <span class="text-success">✔ Verified buyer</span> · {{ r.created_at|date:"j M Y" }}</div>
+          {% if r.body %}<p class="mb-1">{{ r.body|linebreaksbr }}</p>{% endif %}
+          {% if r.photo %}<a href="{{ r.photo.url }}" target="_blank" rel="noopener"><img src="{{ r.photo.url }}" alt="Photo from {{ r.author_name }}" class="review-photo" loading="lazy"></a>{% endif %}
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <p class="text-muted mb-2">No reviews yet. Reviews come only from customers who bought this product.</p>
+    {% endif %}
+    {% if can_review %}<a class="btn btn-cta mt-2" href="{% url 'products:review' product.slug %}">✍ Write a review</a>{% endif %}
+  </section>
+
+  {% if related %}
+  <section class="box mt-3" aria-labelledby="rel-h">
+    <h2 id="rel-h">More from {{ product.category.name }}</h2>
+    <div class="row-scroll">{% for p in related %}{% include "includes/product_card.html" %}{% endfor %}</div>
+  </section>
+  {% endif %}
+</div>
+
+{% if selected and selected.is_purchasable %}
+{# Phones: buy buttons stay reachable after scrolling past the buy box. They press the real buttons above. #}
+<div class="sticky-buy d-md-none" data-sticky-buy hidden>
+  <div class="sb-price"><span data-price-short>{{ selected.price|inr_short }}</span>{% if selected.savings %}<small>Save {{ selected.savings|inr_short }}</small>{% endif %}</div>
+  <button class="btn btn-cta" type="button" data-sticky-add>Add to Cart</button>
+  <button class="btn btn-cta-2" type="button" data-sticky-buynow>Buy Now</button>
+</div>
+{% endif %}
+{% endblock %}

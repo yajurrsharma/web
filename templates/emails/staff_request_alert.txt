@@ -1,0 +1,6 @@
+{% load store %}{% autoescape off %}Customer requested a {{ req.get_kind_display|lower }} for order {{ req.order.order_number }}.
+Reason: {{ req.reason }}
+{{ SITE_URL }}/dashboard/orders/{{ req.order.order_number }}/
+
+— {{ store.store_name }}
+{% endautoescape %}

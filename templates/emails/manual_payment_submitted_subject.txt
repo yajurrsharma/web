@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}Check payment: {{ order.order_number }} — {{ order.grand_total|inr }} ({{ order.get_payment_method_display }}){% endautoescape %}

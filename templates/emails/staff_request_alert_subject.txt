@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}{{ req.get_kind_display }} request for {{ req.order.order_number }}{% endautoescape %}

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% load store %}
+{% block title %}{{ SITE_NAME }} — Agarbatti, dhoop, sambrani & diya batti online{% endblock %}
+{% block content %}
+<div class="container-shop">
+  <h1 class="visually-hidden">{{ SITE_NAME }} — puja essentials online</h1>
+
+  {# ---- Banner slider ---- #}
+  <section class="mk-hero" aria-label="Offers">
+    {% if banners %}
+    <div id="heroCarousel" class="carousel slide" data-bs-ride="carousel" data-bs-pause="false"
+         data-bs-interval="{% widthratio store.hero_interval_seconds 1 1000 %}" data-hero-carousel>
+      {% if banners|length > 1 %}
+      <div class="carousel-indicators" style="z-index:4">
+        {% for b in banners %}<button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="{{ forloop.counter0 }}"{% if forloop.first %} class="active" aria-current="true"{% endif %} aria-label="Slide {{ forloop.counter }}"></button>{% endfor %}
+      </div>
+      {% endif %}
+      <div class="carousel-inner">
+        {% for b in banners %}
+        <div class="carousel-item{% if forloop.first %} active{% endif %}">
+          {% if b.image %}
+            {% if b.link_url %}<a href="{{ b.link_url }}">{% endif %}<img src="{{ b.image.url }}" alt="{{ b.heading }}"{% if not forloop.first %} loading="lazy"{% endif %}>{% if b.link_url %}</a>{% endif %}
+          {% else %}
+            <div class="fallback">
+              <h2>{{ b.heading }}</h2>
+              {% if b.subheading %}<p class="mb-3">{{ b.subheading }}</p>{% endif %}
+              {% if b.link_url %}<a class="btn btn-cta" href="{{ b.link_url }}">{{ b.link_text|default:"Shop now" }}</a>{% endif %}
+            </div>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% if banners|length > 1 %}
+      <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev" style="z-index:4"><span class="carousel-control-prev-icon" aria-hidden="true"></span><span class="visually-hidden">Previous</span></button>
+      <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next" style="z-index:4"><span class="carousel-control-next-icon" aria-hidden="true"></span><span class="visually-hidden">Next</span></button>
+      <button class="hero-pause" type="button" data-hero-pause aria-label="Pause slideshow">❚❚</button>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="fallback">
+      <h2>Fragrance for every prayer, delivered to your door</h2>
+      <p class="mb-3">Agarbatti, dhoop, sambrani cups and ghee diya batti{% if store.cod_enabled %} · Cash on Delivery available{% endif %}</p>
+      <a class="btn btn-cta" href="{% url 'products:shop' %}">Shop all products</a>
+    </div>
+    {% endif %}
+  </section>
+
+  {# ---- Best sellers: top of the page. Real sales only — hidden until there are orders. ---- #}
+  {% if best_sellers %}
+  <section class="box mt-3 best-box" aria-labelledby="best-h">
+    <div class="d-flex align-items-baseline gap-3 mb-2"><h2 id="best-h" class="mb-0">🏆 Best sellers</h2><span class="small text-muted">Most ordered in the last 90 days</span></div>
+    <div class="row-scroll">{% for p in best_sellers %}<div class="position-relative d-flex"><span class="rank-badge">#{{ forloop.counter }}</span>{% include "includes/product_card.html" %}</div>{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  {# ---- Shop by category: round picture tiles ---- #}
+  {% if category_tiles %}
+  <section class="box cat-strip" aria-labelledby="cat-h">
+    <h2 id="cat-h" class="visually-hidden">Shop by category</h2>
+    <div class="cat-tiles">
+      <a class="cat-tile" href="{% url 'products:shop' %}"><span class="ring all" aria-hidden="true">🛕</span><span>All products</span></a>
+      {% for c, image in category_tiles %}
+      <a class="cat-tile" href="{{ c.get_absolute_url }}">
+        <span class="ring">{% if image %}<img src="{{ image|thumb:240 }}" alt="" loading="lazy">{% else %}<span aria-hidden="true">🪔</span>{% endif %}</span>
+        <span>{{ c.name }}</span>
+      </a>
+      {% endfor %}
+      {% if combos %}<a class="cat-tile" href="#combo-h"><span class="ring all" aria-hidden="true">🎁</span><span>Combo offers</span></a>{% endif %}
+    </div>
+  </section>
+  {% endif %}
+
+  {# ---- Category photo boxes ---- #}
+  {% if category_cards %}
+  <div class="row g-3 mt-0">
+    {% for c, items in category_cards %}
+    <div class="col-sm-6 col-lg-3">
+      <section class="quad" aria-labelledby="q{{ c.pk }}">
+        <h2 id="q{{ c.pk }}">{{ c.name }}</h2>
+        <div class="q-grid">
+          {% for p in items %}
+          <a href="{{ p.get_absolute_url }}">{% if p.main_image %}<img src="{{ p.main_image|thumb:240 }}" alt="" loading="lazy">{% else %}<span class="ph"></span>{% endif %}{{ p.name|truncatechars:28 }}</a>
+          {% endfor %}
+        </div>
+        <a class="more" href="{{ c.get_absolute_url }}">See all {{ c.name|lower }} ›</a>
+      </section>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {# ---- Combo offers ---- #}
+  {% if combos %}
+  <section class="box mt-3 combo-box" aria-labelledby="combo-h">
+    <div class="d-flex align-items-baseline gap-3 mb-2"><h2 id="combo-h" class="mb-0">🎁 Combo offers</h2><span class="small text-muted">Save more when you buy together</span></div>
+    <div class="row-scroll">{% for p in combos %}{% include "includes/product_card.html" %}{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  {# ---- Today's deals ---- #}
+  {% if deals %}
+  <section class="box mt-3" aria-labelledby="deals-h">
+    <div class="d-flex align-items-baseline gap-3 mb-2"><h2 id="deals-h" class="mb-0">Today's deals</h2><a href="{% url 'products:shop' %}" class="small">See all products ›</a></div>
+    <div class="row-scroll">{% for p in deals %}{% include "includes/product_card.html" %}{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  {# ---- Blessing / shloka band (text from Dashboard → Store settings; hidden when empty) ---- #}
+  {% if store.shloka_text %}
+  <section class="shloka-band mt-3" aria-label="Blessing">
+    <div class="orn" aria-hidden="true">✦ 🪔 ✦</div>
+    <p class="shloka">{{ store.shloka_text }}</p>
+    {% if store.shloka_meaning %}<p class="meaning">“{{ store.shloka_meaning }}”</p>{% endif %}
+  </section>
+  {% endif %}
+
+  {# ---- Trust points (editable in Dashboard → Store settings → Home page look) ---- #}
+  {% with points=store.trust_list %}{% if points %}
+  <div class="trust mt-3">
+    {% for t in points %}<div><span class="ic" aria-hidden="true">{{ t.icon }}</span><span><strong>{{ t.title }}</strong>{% if t.text %}<br>{{ t.text }}{% endif %}</span></div>{% endfor %}
+  </div>
+  {% endif %}{% endwith %}
+
+  {# ---- Featured ---- #}
+  {% if featured %}
+  <section class="box mt-3" aria-labelledby="feat-h">
+    <div class="d-flex align-items-baseline gap-3 mb-2"><h2 id="feat-h" class="mb-0">Featured products</h2><a href="{% url 'products:shop' %}" class="small">See all ›</a></div>
+    <div class="grid-products wide">{% for p in featured %}{% include "includes/product_card.html" %}{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  {# ---- New arrivals ---- #}
+  {% if latest %}
+  <section class="box mt-3" aria-labelledby="new-h">
+    <div class="d-flex align-items-baseline gap-3 mb-2"><h2 id="new-h" class="mb-0">New arrivals</h2><a href="{% url 'products:shop' %}?sort=newest" class="small">See all ›</a></div>
+    <div class="row-scroll">{% for p in latest %}{% include "includes/product_card.html" %}{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  {# ---- Recently viewed (this browser only; filled by site.js) ---- #}
+  <section class="box mt-3" aria-labelledby="rv-h" data-recently-viewed hidden>
+    <div class="d-flex align-items-baseline gap-3 mb-2"><h2 id="rv-h" class="mb-0">Your recently viewed items</h2><button type="button" class="btn btn-link btn-sm p-0" data-rv-clear>Clear</button></div>
+    <div class="row-scroll" data-rv-list></div>
+  </section>
+
+  {% if not featured and not latest %}
+  <section class="box mt-3">
+    <h2 class="h4">Products are on their way</h2>
+    <p class="mb-0">Our catalogue is being set up. Please check back soon, or <a href="{% url 'core:contact' %}">contact us</a> to order.</p>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

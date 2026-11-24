@@ -1,0 +1,4 @@
+{% extends "emails/_base.html" %}{% load store %}
+{% block body %}
+<p>We've processed a refund of <strong>{{ refund.amount|inr }}</strong> for order {{ order.order_number }}.</p>{% if refund.method == 'gateway' %}<p>It goes back to your original payment method; banks usually take 5–7 working days to show it.</p>{% else %}<p>Transfer reference: {{ refund.reference }}</p>{% endif %}
+{% endblock %}

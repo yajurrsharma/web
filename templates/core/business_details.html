@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}GST & business details — {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 760px">
+  <h1>GST & business details</h1>
+  {% if store.legal_name or store.gstin %}
+  <table class="table mt-4">
+    <tbody>
+      {% if store.legal_name %}<tr><th scope="row">Legal name</th><td>{{ store.legal_name }}</td></tr>{% endif %}
+      {% if store.trade_name %}<tr><th scope="row">Trade name</th><td>{{ store.trade_name }}</td></tr>{% endif %}
+      {% if store.gstin %}<tr><th scope="row">GSTIN</th><td>{{ store.gstin }}</td></tr>{% endif %}
+      {% if store.full_address %}<tr><th scope="row">Registered address</th><td>{{ store.full_address }}</td></tr>{% endif %}
+      {% if store.support_email %}<tr><th scope="row">Email</th><td>{{ store.support_email }}</td></tr>{% endif %}
+      {% if store.support_phone %}<tr><th scope="row">Phone</th><td>{{ store.support_phone }}</td></tr>{% endif %}
+    </tbody>
+  </table>
+  <p class="text-muted">A GST tax invoice is issued for every order and can be downloaded from <a href="{% url 'orders:list' %}">My orders</a>. Enter your GSTIN at checkout to receive a business (B2B) invoice.</p>
+  {% else %}
+  <p class="panel-quiet mt-4">Business registration details will be published here shortly.</p>
+  {% endif %}
+</div>
+{% endblock %}

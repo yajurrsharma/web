@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Contact us — {{ SITE_NAME }}{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="row g-5">
+    <div class="col-lg-5">
+      <h1>Contact us</h1>
+      <p class="lead">Questions about an order, bulk purchases or our products — we're happy to help.</p>
+      <dl class="mt-4">
+        {% if store.support_email %}<dt>Email</dt><dd><a href="mailto:{{ store.support_email }}">{{ store.support_email }}</a></dd>{% endif %}
+        {% if store.support_phone %}<dt>Phone</dt><dd><a href="tel:{{ store.support_phone }}">{{ store.support_phone }}</a></dd>{% endif %}
+        {% if store.whatsapp_number %}<dt>WhatsApp</dt><dd>{{ store.whatsapp_number }}</dd>{% endif %}
+        {% if store.full_address %}<dt>Address</dt><dd>{{ store.full_address }}</dd>{% endif %}
+      </dl>
+      <p class="text-muted">For an existing order, include your order number (it starts with LLD-).</p>
+    </div>
+    <div class="col-lg-7">
+      <form method="post" class="panel" novalidate data-once>
+        {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+        <div class="row g-3">
+          {% for field in form %}{% if field.name == "website" %}
+            <div class="hp-field" aria-hidden="true"><label for="{{ field.id_for_label }}">Leave empty</label>{{ field }}</div>
+          {% else %}
+            <div class="{% if field.name == 'message' or field.name == 'subject' %}col-12{% else %}col-md-6{% endif %}">
+              <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}{% if not field.field.required %} <span class="text-muted">(optional)</span>{% endif %}</label>
+              {{ field }}
+              {{ field.errors }}
+            </div>
+          {% endif %}{% endfor %}
+        </div>
+        <button class="btn btn-primary mt-4" type="submit" data-busy="Sending…">Send message</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

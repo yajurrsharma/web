@@ -1,0 +1,68 @@
+{% extends "dashboard/_layout.html" %}
+{% load store %}
+{% block title %}{% if creating %}Add pack size{% else %}{{ variant.sku }}{% endif %} — Dashboard{% endblock %}
+{% block dash %}
+<div class="top-actions">
+  <div>
+    <h1>{% if creating %}Add pack size{% else %}Edit pack size{% endif %}</h1>
+    <p class="subtitle mb-0">Product: <a href="{% url 'dashboard:product_edit' product.pk %}">{{ product.name }}</a>{% if variant %} · SKU <code>{{ variant.sku }}</code>{% endif %}</p>
+  </div>
+  <a class="btn btn-secondary" href="{% url 'dashboard:product_edit' product.pk %}">Back to product</a>
+</div>
+{% if form.errors %}<div class="alert alert-danger">Please correct the fields marked in red below.{{ form.non_field_errors }}</div>{% endif %}
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <form method="post" class="panel" novalidate>
+      {% csrf_token %}
+      <h2 class="form-section">Price</h2>
+      <div class="row">
+        <div class="col-md-4">{% include "dashboard/_field.html" with field=form.mrp %}</div>
+        <div class="col-md-4">{% include "dashboard/_field.html" with field=form.price %}</div>
+        {% if form.cost_price %}<div class="col-md-4">{% include "dashboard/_field.html" with field=form.cost_price %}</div>{% endif %}
+      </div>
+      <h2 class="form-section">Stock</h2>
+      <div class="row">
+        {% if creating %}<div class="col-md-6">{% include "dashboard/_field.html" with field=form.opening_stock %}</div>
+        {% else %}<div class="col-md-6 mb-3"><div class="form-label">Current stock</div>
+          <div class="fs-4 fw-bold {% if variant.stock == 0 %}stock-out{% elif variant.stock <= variant.low_stock_threshold %}stock-low{% endif %}">{{ variant.stock }}</div>
+          {% if perms.inventory.add_stockmovement %}<a class="btn btn-sm btn-success" href="{% url 'dashboard:stock_in' %}?variant={{ variant.pk }}">+ Add / correct stock</a>{% endif %}
+          <div class="form-text">Stock is changed only through “Add Stock”, so every change is recorded.</div></div>{% endif %}
+        <div class="col-md-6">{% include "dashboard/_field.html" with field=form.low_stock_threshold %}</div>
+      </div>
+      <h2 class="form-section">Name &amp; code</h2>
+      <div class="row">
+        <div class="col-md-6">{% include "dashboard/_field.html" with field=form.name %}</div>
+        <div class="col-md-6">{% include "dashboard/_field.html" with field=form.net_quantity %}</div>
+        <div class="col-md-6">{% include "dashboard/_field.html" with field=form.sku %}</div>
+      </div>
+      <h2 class="form-section">Shipping</h2>
+      <div class="row">
+        <div class="col-md-3">{% include "dashboard/_field.html" with field=form.weight_grams %}</div>
+        <div class="col-4 col-md-3">{% include "dashboard/_field.html" with field=form.length_cm %}</div>
+        <div class="col-4 col-md-3">{% include "dashboard/_field.html" with field=form.width_cm %}</div>
+        <div class="col-4 col-md-3">{% include "dashboard/_field.html" with field=form.height_cm %}</div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">{% include "dashboard/_field.html" with field=form.is_active %}</div>
+        <div class="col-md-6">{% include "dashboard/_field.html" with field=form.sort_order %}</div>
+      </div>
+      <button class="btn btn-primary px-4" type="submit">{% if creating %}Add pack size{% else %}Save Changes{% endif %}</button>
+      <a class="btn btn-secondary" href="{% url 'dashboard:product_edit' product.pk %}">Cancel</a>
+    </form>
+  </div>
+  {% if movements %}
+  <div class="col-xl-4">
+    <div class="panel">
+      <h2 class="h5">Recent stock changes</h2>
+      <ul class="list-unstyled mb-0 small">
+        {% for m in movements %}
+        <li class="py-1 border-bottom"><span class="{% if m.change > 0 %}stock-ok{% else %}stock-out{% endif %}">{% if m.change > 0 %}+{% endif %}{{ m.change }}</span> → {{ m.stock_after }} · {{ m.get_reason_display }}<br>
+          <span class="text-muted">{{ m.created_at|date:"j M Y, H:i" }} · {% if m.created_by %}{{ m.created_by.get_short_name }}{% else %}system{% endif %}{% if m.order %} · {{ m.order.order_number }}{% endif %}{% if m.note %} · {{ m.note }}{% endif %}</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

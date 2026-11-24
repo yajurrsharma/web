@@ -1,0 +1,10 @@
+{% load store %}{% autoescape off %}Your order {{ order.order_number }} has been delivered. We hope it brings peace to your prayers.
+
+If anything is wrong, you can request a return from your order page within the return window.
+{{ SITE_URL }}{{ order.get_absolute_url }}
+
+Liked it? Please rate your products — it takes 30 seconds and helps other devotees:
+{{ SITE_URL }}{{ order.get_absolute_url }}#rate
+
+— {{ store.store_name }}
+{% endautoescape %}

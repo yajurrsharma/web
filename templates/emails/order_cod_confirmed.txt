@@ -1,0 +1,11 @@
+{% load store %}{% autoescape off %}Thank you, {{ order.customer_name }}!
+
+Your order {{ order.order_number }} is confirmed. Please keep {{ order.grand_total|inr }} ready to pay on delivery.
+
+{% for i in order.items.all %}- {{ i.quantity }} x {{ i.description }} — {{ i.line_gross|inr }}
+{% endfor %}Total: {{ order.grand_total|inr }}
+
+View your order: {{ SITE_URL }}{{ order.get_absolute_url }}
+
+— {{ store.store_name }}
+{% endautoescape %}

@@ -1,0 +1,54 @@
+{% extends "dashboard/_layout.html" %}
+{% block title %}{{ campaign.subject }} — Dashboard{% endblock %}
+{% block dash %}
+<div class="top-actions">
+  <div><h1>{{ campaign.subject }}</h1>
+  <p class="subtitle mb-0"><span class="badge-s {% if campaign.status == 'sent' %}ok{% elif campaign.status == 'sending' %}warn{% endif %}">{{ campaign.get_status_display }}</span>{% if campaign.started_at %} · started {{ campaign.started_at|date:"j M Y, H:i" }}{% endif %}{% if campaign.finished_at %} · finished {{ campaign.finished_at|date:"j M Y, H:i" }}{% endif %}</p></div>
+  <a class="btn btn-secondary" href="{% url 'dashboard:campaigns' %}">All offer emails</a>
+</div>
+<div class="row g-4">
+  <div class="col-xl-7">
+    <div class="panel">
+      <h2 class="h5">Preview <span class="small text-muted fw-normal">(each customer sees their own name)</span></h2>
+      <iframe title="Email preview" sandbox srcdoc="{{ preview }}" style="width:100%;height:640px;border:1px solid var(--border);border-radius:8px;background:#fff"></iframe>
+    </div>
+  </div>
+  <div class="col-xl-5">
+    {% if campaign.status == "draft" %}
+    <div class="panel mb-3">
+      <h2 class="h5">1. Check it</h2>
+      {% if perms.campaigns.add_campaign %}<a class="btn btn-outline-burgundy mb-2" href="{% url 'dashboard:campaign_edit' campaign.pk %}">Edit</a>{% endif %}
+      {% if perms.campaigns.change_campaign %}
+      <form method="post" action="{% url 'dashboard:campaign_action' campaign.pk %}" data-once class="d-inline">{% csrf_token %}
+        <button class="btn btn-outline-burgundy mb-2" name="action" value="test" type="submit">Send test to me ({{ user.email }})</button></form>
+      {% endif %}
+    </div>
+    <div class="panel mb-3" style="border:2px solid #f59e0b">
+      <h2 class="h5">2. Send to customers</h2>
+      <p class="mb-2">Goes to <strong>{{ subscribers }}</strong> customer{{ subscribers|pluralize }} who agreed to offer emails — a separate email to each. About {{ batch_size }} are sent at once, the rest automatically every hour (max {{ daily_limit }} a day).</p>
+      {% if perms.campaigns.change_campaign %}
+      <form method="post" action="{% url 'dashboard:campaign_action' campaign.pk %}" data-once onsubmit="return confirm('Send this email to {{ subscribers }} customer(s)? This cannot be undone.')">{% csrf_token %}
+        <button class="btn btn-primary" name="action" value="start" type="submit" {% if not subscribers %}disabled{% endif %}>Send to {{ subscribers }} customer{{ subscribers|pluralize }}</button></form>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="panel mb-3">
+      <h2 class="h5">Progress</h2>
+      <table class="table table-sm mb-2">
+        <tr><th scope="row">Sent</th><td class="text-end stock-ok">{{ counts.sent }}</td></tr>
+        <tr><th scope="row">Waiting</th><td class="text-end">{{ counts.pending }}</td></tr>
+        <tr><th scope="row">Failed</th><td class="text-end {% if counts.failed %}stock-out{% endif %}">{{ counts.failed }}</td></tr>
+        <tr><th scope="row">Skipped (unsubscribed)</th><td class="text-end">{{ counts.skipped }}</td></tr>
+        <tr><th scope="row">Total</th><td class="text-end fw-bold">{{ counts.total }}</td></tr>
+      </table>
+      <p class="small text-muted">Sent in the last 24 hours: {{ sent_24h }} / {{ daily_limit }}.</p>
+      {% if campaign.status == "sending" and perms.campaigns.change_campaign %}
+      <form method="post" action="{% url 'dashboard:campaign_action' campaign.pk %}" data-once>{% csrf_token %}
+        <button class="btn btn-primary" name="action" value="batch" type="submit">Send next batch now</button></form>
+      {% endif %}
+      {% if failed %}<details class="mt-2"><summary class="small">Failed addresses</summary><ul class="small mb-0">{% for r in failed %}<li>{{ r.email }} — {{ r.error }}</li>{% endfor %}</ul></details>{% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

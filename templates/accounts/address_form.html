@@ -1,0 +1,11 @@
+{% extends "accounts/_layout.html" %}
+{% block title %}{{ title }} — {{ SITE_NAME }}{% endblock %}
+{% block account %}
+<h1 class="mb-3">{{ title }}</h1>
+<form method="post" class="panel" style="max-width: 640px" novalidate>
+  {% csrf_token %}
+  {% include "includes/form_fields.html" %}
+  <button class="btn btn-primary" type="submit">Save address</button>
+  <a class="btn btn-link" href="{% if request.GET.next == '/checkout/' %}/checkout/{% else %}{% url 'accounts:addresses' %}{% endif %}">Cancel</a>
+</form>
+{% endblock %}

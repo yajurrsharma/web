@@ -1,0 +1,5 @@
+{% load store %}{% autoescape off %}Your GST invoice {{ invoice.number }} for order {{ order.order_number }} is attached.
+You can also download it from: {{ SITE_URL }}{{ order.get_absolute_url }}
+
+— {{ store.store_name }}
+{% endautoescape %}

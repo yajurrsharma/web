@@ -1,0 +1,45 @@
+from django.urls import path
+
+from . import campaign_views, catalog_views, marketing_views, views
+
+app_name = "dashboard"
+
+urlpatterns = [
+    path("", views.home, name="home"),
+    path("products/", catalog_views.product_list, name="products"),
+    path("products/new/", catalog_views.product_create, name="product_create"),
+    path("products/<int:pk>/", catalog_views.product_edit, name="product_edit"),
+    path("products/<int:product_pk>/pack-sizes/new/", catalog_views.variant_create, name="variant_create"),
+    path("products/<int:product_pk>/photos/add/", catalog_views.gallery_upload, name="gallery_upload"),
+    path("products/<int:product_pk>/photos/save/", catalog_views.gallery_update, name="gallery_update"),
+    path("pack-sizes/<int:pk>/", catalog_views.variant_edit, name="variant_edit"),
+    path("inventory/add-stock/", catalog_views.stock_in, name="stock_in"),
+    path("categories/", catalog_views.category_list, name="categories"),
+    path("categories/<int:pk>/", catalog_views.category_list, name="category_edit"),
+    path("hsn-gst/", catalog_views.tax_list, name="tax_classes"),
+    path("hsn-gst/<int:pk>/", catalog_views.tax_list, name="tax_class_edit"),
+    path("settings/", catalog_views.store_settings, name="store_settings"),
+    path("offers/", marketing_views.offer_list, name="offers"),
+    path("offers/<int:pk>/", marketing_views.offer_list, name="offer_edit"),
+    path("offers/<int:pk>/toggle/", marketing_views.offer_toggle, name="offer_toggle"),
+    path("reviews/", marketing_views.review_list, name="reviews"),
+    path("reviews/<int:pk>/action/", marketing_views.review_action, name="review_action"),
+    path("offer-emails/", campaign_views.campaign_list, name="campaigns"),
+    path("offer-emails/new/", campaign_views.campaign_edit, name="campaign_create"),
+    path("offer-emails/<int:pk>/", campaign_views.campaign_detail, name="campaign_detail"),
+    path("offer-emails/<int:pk>/edit/", campaign_views.campaign_edit, name="campaign_edit"),
+    path("offer-emails/<int:pk>/action/", campaign_views.campaign_action, name="campaign_action"),
+    path("banners/", catalog_views.banner_list, name="banners"),
+    path("banners/<int:pk>/", catalog_views.banner_list, name="banner_edit"),
+    path("banners/<int:pk>/delete/", catalog_views.banner_delete, name="banner_delete"),
+    path("orders/", views.order_list, name="orders"),
+    path("orders/<str:order_number>/", views.order_detail, name="order_detail"),
+    path("orders/<str:order_number>/action/", views.order_action, name="order_action"),
+    path("orders/<str:order_number>/packing-slip/", views.packing_slip, name="packing_slip"),
+    path("orders/<str:order_number>/shipping-label/", views.shipping_label, name="shipping_label"),
+    path("requests/<int:pk>/action/", views.request_action, name="request_action"),
+    path("inventory/", views.inventory, name="inventory"),
+    path("inventory/adjust/", views.stock_adjust, name="stock_adjust"),
+    path("reports/", views.report, name="reports"),
+    path("reports/<slug:kind>/", views.report, name="report"),
+]

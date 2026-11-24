@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en-IN">
+<head><meta charset="utf-8"><title>Packing slip {{ order.order_number }}</title>
+<style>
+  body { font-family: system-ui, sans-serif; color: #222; margin: 24px; font-size: 14px; }
+  h1 { font-size: 20px; margin: 0 0 4px; } table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+  th, td { border-bottom: 1px solid #ccc; padding: 6px; text-align: left; } .cols { display: flex; gap: 32px; margin-top: 12px; }
+  .box { border: 1px solid #999; padding: 10px; flex: 1; } @media print { button { display: none; } }
+</style></head>
+<body>
+  <button onclick="window.print()">Print</button>
+  <h1>{{ order.order_number }}</h1>
+  <div>Placed {{ order.created_at|date:"j M Y" }} · {% if order.is_cod %}<strong>COD — collect ₹{{ order.grand_total }}</strong>{% else %}Prepaid{% endif %}</div>
+  <div class="cols">
+    <div class="box"><strong>Ship to</strong>{% include "orders/_address.html" with a=order.shipping_address %}</div>
+    <div class="box"><strong>From</strong><br>{{ store.trade_name|default:store.legal_name|default:SITE_NAME }}<br>{{ store.full_address }}<br>{{ store.support_phone }}</div>
+  </div>
+  {% if order.delivery_instructions %}<p><strong>Instructions:</strong> {{ order.delivery_instructions }}</p>{% endif %}
+  <table><thead><tr><th>SKU</th><th>Item</th><th>Qty</th><th>Packed ✓</th></tr></thead>
+  <tbody>{% for i in order.items.all %}<tr><td>{{ i.sku }}</td><td>{{ i.description }}</td><td>{{ i.quantity }}</td><td></td></tr>{% endfor %}</tbody></table>
+</body></html>

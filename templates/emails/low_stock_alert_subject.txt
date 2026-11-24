@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}Low stock: {{ variant.sku }} ({{ variant.stock }} left){% endautoescape %}

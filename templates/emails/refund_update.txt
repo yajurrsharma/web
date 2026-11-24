@@ -1,0 +1,5 @@
+{% load store %}{% autoescape off %}We've processed a refund of {{ refund.amount|inr }} for order {{ order.order_number }}.
+{% if refund.method == 'gateway' %}It goes back to your original payment method; banks usually take 5–7 working days to show it.{% else %}Reference: {{ refund.reference }}{% endif %}
+
+— {{ store.store_name }}
+{% endautoescape %}

@@ -1,0 +1,4 @@
+{% extends "emails/_base.html" %}{% load store %}
+{% block body %}
+<p><strong>From:</strong> {{ msg.name }} &lt;{{ msg.email }}&gt; {{ msg.phone }}</p><p><strong>Subject:</strong> {{ msg.subject }}</p><p>{{ msg.message|linebreaksbr }}</p>
+{% endblock %}

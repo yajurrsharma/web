@@ -1,0 +1,55 @@
+{% extends "dashboard/_layout.html" %}
+{% load store %}
+{% block title %}Inventory — Dashboard{% endblock %}
+{% block dash %}
+<div class="d-flex justify-content-between align-items-baseline flex-wrap gap-2">
+  <div><h1>Stock List</h1><p class="subtitle">Current stock of every product. Red = out of stock, orange = low.</p></div>
+  <div class="d-flex gap-2">
+    {% if perms.inventory.add_stockmovement %}<a class="btn btn-success" href="{% url 'dashboard:stock_in' %}">+ Add Stock</a>{% endif %}
+    <a class="btn btn-outline-burgundy" href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if low %}low=1&{% endif %}format=csv">Export CSV</a>
+  </div>
+</div>
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-6"><label class="visually-hidden" for="iq">Search</label><input class="form-control" id="iq" name="q" value="{{ q }}" placeholder="SKU or product name"></div>
+  <div class="col-md-3 d-flex align-items-center"><div class="form-check"><input class="form-check-input" type="checkbox" id="il" name="low" value="1"{% if low %} checked{% endif %}><label class="form-check-label" for="il">Low stock only</label></div></div>
+  <div class="col-md-3"><button class="btn btn-primary w-100" type="submit">Filter</button></div>
+</form>
+<div class="panel">
+<div class="table-responsive">
+<table class="table table-sm align-middle">
+  <thead><tr><th scope="col">SKU</th><th scope="col">Product</th><th scope="col" class="text-end">Stock</th><th scope="col" class="text-end">Alert at</th><th scope="col">Adjust stock</th></tr></thead>
+  <tbody>
+  {% for v in variants %}
+  <tr>
+    <td>{{ v.sku }}</td>
+    <td>{% if perms.products.view_product %}<a href="{% url 'dashboard:product_edit' v.product_id %}">{{ v }}</a>{% else %}{{ v }}{% endif %}{% if not v.is_active %} <span class="text-muted small">(inactive)</span>{% endif %}</td>
+    <td class="text-end {% if v.stock == 0 %}stock-out{% elif v.stock <= v.low_stock_threshold %}stock-low{% endif %}">{{ v.stock }}</td>
+    <td class="text-end">{{ v.low_stock_threshold }}</td>
+    <td>
+      {% if perms.inventory.add_stockmovement %}
+      <form method="post" action="{% url 'dashboard:stock_adjust' %}" class="d-flex flex-wrap gap-1">
+        {% csrf_token %}<input type="hidden" name="variant_id" value="{{ v.pk }}"><input type="hidden" name="next" value="{{ request.get_full_path }}">
+        <label class="visually-hidden" for="ch{{ v.pk }}">Quantity change for {{ v.sku }}</label>
+        <input class="form-control form-control-sm" style="width:5.5rem" id="ch{{ v.pk }}" name="change" placeholder="+10 / −2" required>
+        <label class="visually-hidden" for="rs{{ v.pk }}">Reason</label>
+        <select class="form-select form-select-sm" style="width:auto" id="rs{{ v.pk }}" name="reason">{% for k, label in reasons %}<option value="{{ k }}">{{ label }}</option>{% endfor %}</select>
+        <label class="visually-hidden" for="nt{{ v.pk }}">Note</label>
+        <input class="form-control form-control-sm" style="width:9rem" id="nt{{ v.pk }}" name="note" placeholder="Note (optional)">
+        <button class="btn btn-sm btn-outline-burgundy" type="submit">Save</button>
+      </form>
+      {% endif %}
+    </td>
+  </tr>
+  {% empty %}<tr><td colspan="5" class="text-muted">No products found.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+</div>
+<p class="small text-muted mt-2">Every change is recorded in the stock ledger with your name. Use a minus sign to remove stock; “Damaged / expired / lost” always removes. See <a href="{% url 'dashboard:report' 'stock' %}">stock movements</a>.</p>
+{% if page_obj.has_other_pages %}<nav aria-label="Pages"><ul class="pagination">
+  {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if low %}&low=1{% endif %}">Previous</a></li>{% endif %}
+  <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+  {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}{% if q %}&q={{ q|urlencode }}{% endif %}{% if low %}&low=1{% endif %}">Next</a></li>{% endif %}
+</ul></nav>{% endif %}
+{% endblock %}

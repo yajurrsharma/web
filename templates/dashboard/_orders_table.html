@@ -1,0 +1,20 @@
+{% load store %}
+<div class="table-responsive">
+<table class="table table-sm align-middle mb-0">
+  <thead><tr><th scope="col">Order</th><th scope="col">Placed</th><th scope="col">Customer</th><th scope="col" class="text-end">Total</th><th scope="col">Method</th><th scope="col">Status</th><th scope="col">Payment</th></tr></thead>
+  <tbody>
+  {% for o in orders %}
+  <tr>
+    <td><a href="{% url 'dashboard:order_detail' o.order_number %}">{{ o.order_number }}</a></td>
+    <td>{{ o.created_at|date:"j M, g:i A" }}</td>
+    <td>{{ o.customer_name }}<div class="small text-muted">{{ o.shipping_address.city }}</div></td>
+    <td class="text-end">{{ o.grand_total|inr }}</td>
+    <td>{% if o.is_cod %}COD{% else %}Online{% endif %}</td>
+    <td><span class="status-pill s-{{ o.status }}">{{ o.get_status_display }}</span></td>
+    <td><span class="status-pill s-{{ o.payment_status }}">{{ o.get_payment_status_display }}</span></td>
+  </tr>
+  {% empty %}<tr><td colspan="7" class="text-muted">No orders found.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>

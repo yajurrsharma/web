@@ -1,0 +1,4 @@
+{% extends "emails/_base.html" %}{% load store %}
+{% block body %}
+<p>Customer requested a {{ req.get_kind_display|lower }} for order <strong>{{ req.order.order_number }}</strong>.</p><p>Reason: {{ req.reason }}</p><p style="margin:20px 0;"><a href="{{ SITE_URL }}/dashboard/orders/{{ req.order.order_number }}/" style="background:#6E1423;color:#ffffff;padding:10px 18px;border-radius:4px;text-decoration:none;display:inline-block;">Open order</a></p>
+{% endblock %}

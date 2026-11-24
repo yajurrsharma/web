@@ -1,0 +1,44 @@
+{% extends "dashboard/_layout.html" %}
+{% block title %}Add Stock — Dashboard{% endblock %}
+{% block dash %}
+<div class="top-actions">
+  <div>
+    <h1>Add Stock</h1>
+    <p class="subtitle mb-0">Record new stock received, a correction after counting, or damaged items.</p>
+  </div>
+  <a class="btn btn-secondary" href="{% url 'dashboard:inventory' %}">Stock list</a>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-6">
+    <form method="post" class="panel" novalidate>
+      {% csrf_token %}
+      {{ form.non_field_errors }}
+      {% include "dashboard/_field.html" with field=form.variant %}
+      <div class="row">
+        <div class="col-md-5">{% include "dashboard/_field.html" with field=form.change %}</div>
+        <div class="col-md-7">{% include "dashboard/_field.html" with field=form.reason %}</div>
+      </div>
+      {% include "dashboard/_field.html" with field=form.note %}
+      <button class="btn btn-primary px-4" type="submit">Save Stock</button>
+    </form>
+  </div>
+  <div class="col-xl-6">
+    <div class="panel">
+      <div class="d-flex justify-content-between"><h2 class="h5">Latest stock changes</h2>{% if perms.orders.view_reports %}<a class="small" href="{% url 'dashboard:report' 'stock' %}">Full history</a>{% endif %}</div>
+      <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead><tr><th scope="col">When</th><th scope="col">Product</th><th scope="col" class="text-end">Change</th><th scope="col" class="text-end">Now</th><th scope="col">Reason</th></tr></thead>
+        <tbody>
+        {% for m in recent %}
+          <tr><td class="text-nowrap">{{ m.created_at|date:"j M, H:i" }}</td><td>{{ m.variant }}<div class="small text-muted">{% if m.created_by %}{{ m.created_by.get_short_name }}{% else %}system{% endif %}{% if m.order %} · {{ m.order.order_number }}{% endif %}{% if m.note %} · {{ m.note }}{% endif %}</div></td>
+            <td class="text-end {% if m.change > 0 %}stock-ok{% else %}stock-out{% endif %}">{% if m.change > 0 %}+{% endif %}{{ m.change }}</td><td class="text-end">{{ m.stock_after }}</td><td class="small">{{ m.get_reason_display }}</td></tr>
+        {% empty %}<tr><td colspan="5" class="text-muted">No stock changes yet.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

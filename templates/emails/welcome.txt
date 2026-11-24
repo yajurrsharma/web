@@ -1,0 +1,7 @@
+{% load store %}{% autoescape off %}Namaste {{ user.get_short_name }},
+
+Your account is ready. Browse our agarbatti, dhoop, sambrani cups and diya batti:
+{{ SITE_URL }}/shop/
+
+— {{ store.store_name }}
+{% endautoescape %}

@@ -1,0 +1,9 @@
+{% load store %}{% autoescape off %}Order {{ order.order_number }} has been cancelled.{% if reason %}
+Reason: {{ reason }}{% endif %}
+{% if order.is_paid %}
+Your refund will be processed to the original payment method. We'll email you when it's done.{% endif %}
+
+{{ SITE_URL }}{{ order.get_absolute_url }}
+
+— {{ store.store_name }}
+{% endautoescape %}

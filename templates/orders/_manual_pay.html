@@ -1,0 +1,47 @@
+{% load store %}
+{# How to pay a direct UPI / bank transfer order, plus the UTR form. Shown while the order waits for money. #}
+<section class="panel mb-3" style="border:2px solid var(--gold, #e8a93b)" aria-labelledby="mp-h">
+  <h2 id="mp-h" class="h5">Please pay {{ order.grand_total|inr }} to complete your order</h2>
+  <p class="mb-2">Pay by <strong>{{ order.payment_due_by|date:"j M Y, g:i A" }}</strong> — after that the order is cancelled automatically. We dispatch as soon as the money reaches our account.</p>
+  <div class="row g-3 align-items-start">
+    {% if order.payment_method == "upi" %}
+    <div class="col-md-5 text-center">
+      {% if upi_qr %}<div style="max-width:220px;margin:0 auto" aria-label="UPI QR code for {{ order.grand_total|inr }}">{{ upi_qr }}</div>{% endif %}
+      <p class="small mb-2">Scan with any UPI app — the amount is filled in.</p>
+      {% if upi_link %}<a class="btn btn-cta d-md-none w-100" href="{{ upi_link }}">Open UPI app to pay {{ order.grand_total|inr_short }}</a>{% endif %}
+    </div>
+    <div class="col-md-7">
+      <table class="table table-sm mb-0">
+        <tr><th scope="row">UPI ID</th><td><strong>{{ store.upi_id }}</strong></td></tr>
+        <tr><th scope="row">Name</th><td>{{ store.upi_payee_name }}</td></tr>
+        <tr><th scope="row">Amount</th><td><strong>{{ order.grand_total|inr }}</strong></td></tr>
+        <tr><th scope="row">Note / remarks</th><td>{{ order.order_number }}</td></tr>
+      </table>
+    </div>
+    {% else %}
+    <div class="col-md-8">
+      <table class="table table-sm mb-0">
+        <tr><th scope="row">Account name</th><td><strong>{{ store.bank_account_name }}</strong></td></tr>
+        <tr><th scope="row">Account number</th><td><strong>{{ store.bank_account_number }}</strong></td></tr>
+        <tr><th scope="row">IFSC</th><td><strong>{{ store.bank_ifsc }}</strong></td></tr>
+        <tr><th scope="row">Bank</th><td>{{ store.bank_name }}{% if store.bank_branch %}, {{ store.bank_branch }}{% endif %}</td></tr>
+        <tr><th scope="row">Amount</th><td><strong>{{ order.grand_total|inr }}</strong></td></tr>
+        <tr><th scope="row">Remarks</th><td>{{ order.order_number }}</td></tr>
+      </table>
+    </div>
+    {% endif %}
+  </div>
+  <hr>
+  {% if order.payment_reference %}
+  <p class="mb-0 text-success"><strong>✓ Reference received: {{ order.payment_reference }}.</strong> We're checking our account and will confirm by email. Entered the wrong number? Correct it below.</p>
+  {% endif %}
+  <form method="post" action="{% url 'orders:payment_reference' order.order_number %}" class="row g-2 align-items-end mt-1">
+    {% csrf_token %}
+    <div class="col-sm-8">
+      <label class="form-label" for="pref">UTR / transaction reference number</label>
+      <input class="form-control" id="pref" name="reference" maxlength="40" required autocomplete="off" placeholder="e.g. 432198765432" value="{{ order.payment_reference }}">
+      <div class="form-text">Find it in your UPI app or bank SMS after paying (often 12 digits).</div>
+    </div>
+    <div class="col-sm-4 mb-sm-4"><button class="btn btn-cta w-100" type="submit">I have paid — submit</button></div>
+  </form>
+</section>

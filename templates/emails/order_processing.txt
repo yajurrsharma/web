@@ -1,0 +1,6 @@
+{% load store %}{% autoescape off %}Good news — we've started packing order {{ order.order_number }}. We'll email you the tracking details when it ships.
+
+{{ SITE_URL }}{{ order.get_absolute_url }}
+
+— {{ store.store_name }}
+{% endautoescape %}

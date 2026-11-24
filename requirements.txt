@@ -1,0 +1,14 @@
+# Life Line Dynamics — pinned dependencies
+# Django 5.2 is the LTS release (security support until April 2028).
+# Supported Python: 3.10 – 3.13 (choose 3.12 or 3.13 on PythonAnywhere).
+
+Django==5.2.18
+python-dotenv==1.2.4
+Pillow==13.0.0
+reportlab==5.0.1
+razorpay==2.0.1
+
+# Production MySQL driver. Pre-installed build tools exist on PythonAnywhere.
+# On Windows you do not need it for local SQLite development — install
+# requirements-dev.txt instead, which skips it.
+mysqlclient==2.3.0

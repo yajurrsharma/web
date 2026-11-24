@@ -1,0 +1,4 @@
+{% extends "emails/_base.html" %}{% load store %}
+{% block body %}
+<p>Namaste{% if name %} {{ name }}{% endif %},</p><p>Your verification code is</p><p style="font-size:32px;letter-spacing:6px;font-weight:bold;color:#6E1423;margin:8px 0;">{{ code }}</p><p>It expires in {{ minutes }} minutes and can be used once. If you didn't create an account, ignore this email.</p>
+{% endblock %}

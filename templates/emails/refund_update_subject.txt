@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}Refund of {{ refund.amount|inr }} processed — order {{ order.order_number }}{% endautoescape %}

@@ -1,0 +1,6 @@
+{% load store %}{% autoescape off %}Your payment for order {{ order.order_number }} didn't go through. If money was deducted, it will be confirmed or reversed automatically — please don't pay twice.
+
+Try again: {{ SITE_URL }}/payments/pay/{{ order.order_number }}/
+
+— {{ store.store_name }}
+{% endautoescape %}

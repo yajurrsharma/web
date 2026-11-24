@@ -1,0 +1,5 @@
+{% load store %}{% autoescape off %}{{ variant }} (SKU {{ variant.sku }}) is down to {{ variant.stock }} — alert level {{ variant.low_stock_threshold }}.
+Restock: {{ SITE_URL }}/dashboard/inventory/?q={{ variant.sku }}
+
+— {{ store.store_name }}
+{% endautoescape %}

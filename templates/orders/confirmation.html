@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load store %}
+{% block title %}Thank you — {{ SITE_NAME }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 820px">
+  <h1>Thank you, {{ order.customer_name }}</h1>
+  <p class="lead">
+    {% if order.is_cod %}Your order <strong>{{ order.order_number }}</strong> is confirmed. Please keep {{ order.grand_total|inr }} ready to pay on delivery.
+    {% elif order.is_paid %}We've received your payment of {{ order.grand_total|inr }}. Your order <strong>{{ order.order_number }}</strong> is confirmed.
+    {% elif manual_pay %}Your order <strong>{{ order.order_number }}</strong> is reserved. Please complete the payment below.
+    {% else %}Order <strong>{{ order.order_number }}</strong> is waiting for payment confirmation.{% endif %}
+  </p>
+  {% if manual_pay %}{% include "orders/_manual_pay.html" %}{% endif %}
+  <p>{% if manual_pay %}The payment details have also been emailed{% else %}A confirmation email is on its way{% endif %} to {{ order.email }}. You'll get another email when it ships.</p>
+  <div class="panel mt-4">
+    {% include "orders/_items.html" %}
+  </div>
+  <div class="row g-3 mt-2">
+    <div class="col-md-6"><div class="panel-quiet h-100"><h2 class="h6">Delivering to</h2>{% include "orders/_address.html" with a=order.shipping_address %}</div></div>
+    <div class="col-md-6"><div class="panel-quiet h-100"><h2 class="h6">What happens next</h2><p class="mb-0">{{ store.estimated_delivery_text }} You can follow your order in <a href="{{ order.get_absolute_url }}">My orders</a>.</p></div></div>
+  </div>
+  <a class="btn btn-primary mt-4" href="{% url 'products:shop' %}">Continue shopping</a>
+</div>
+{% endblock %}

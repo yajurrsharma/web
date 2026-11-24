@@ -1,0 +1,7 @@
+{% extends "emails/_base.html" %}{% load store %}
+{% block body %}
+<p>The courier is <strong>returning order {{ order.order_number }}</strong> to you (status: {{ shipment.status_text }}).</p>
+<p>AWB {{ shipment.awb }} via {{ shipment.courier_name }} · {{ order.grand_total|inr }} ({{ order.get_payment_method_display }})</p>
+<p>When the parcel arrives, inspect it, then cancel the order or record the return in the dashboard.</p>
+<p><a href="{{ SITE_URL }}/dashboard/orders/{{ order.order_number }}/" style="background:#6E1423;color:#ffffff;padding:10px 18px;border-radius:4px;text-decoration:none;display:inline-block;">Open order</a></p>
+{% endblock %}

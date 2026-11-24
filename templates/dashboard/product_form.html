@@ -1,0 +1,207 @@
+{% extends "dashboard/_layout.html" %}
+{% load store %}
+{% block title %}{% if creating %}Add Product{% else %}{{ product.name }}{% endif %} — Dashboard{% endblock %}
+{% block dash %}
+<div class="top-actions">
+  <div>
+    <h1>{% if creating %}Add Product{% else %}{{ product.name }}{% endif %}</h1>
+    <p class="subtitle mb-0">{% if creating %}Fill in the details below. Fields marked <span class="req">*</span> are required.{% else %}<span class="badge-s {{ product.status }}">{{ product.get_status_display }}</span> · {{ product.category }} · last updated {{ product.updated_at|date:"j M Y, H:i" }}{% endif %}</p>
+  </div>
+  <div class="d-flex gap-2">
+    {% if not creating and product.is_published %}<a class="btn btn-outline-burgundy" href="{{ product.get_absolute_url }}" target="_blank" rel="noopener">View in shop ↗</a>{% endif %}
+    <a class="btn btn-secondary" href="{% url 'dashboard:products' %}">Back to products</a>
+  </div>
+</div>
+
+{% if pform.non_field_errors or vform.non_field_errors %}<div class="alert alert-danger">{{ pform.non_field_errors }}{{ vform.non_field_errors }}</div>{% endif %}
+{% if pform.errors or vform.errors or gform.errors %}<div class="alert alert-danger">Please correct the fields marked in red below.</div>{% endif %}
+
+<form method="post" enctype="multipart/form-data" novalidate>
+  {% csrf_token %}
+  <div class="row g-4">
+    <div class="col-xl-8">
+      <div class="panel mb-4">
+        <h2 class="form-section">1. Basic details</h2>
+        {% include "dashboard/_field.html" with field=pform.name %}
+        <div class="row">
+          <div class="col-md-6">{% include "dashboard/_field.html" with field=pform.category %}</div>
+          <div class="col-md-6">{% include "dashboard/_field.html" with field=pform.tax_class %}</div>
+        </div>
+        {% include "dashboard/_field.html" with field=pform.short_description %}
+        {% include "dashboard/_field.html" with field=pform.description %}
+      </div>
+
+      {% if creating %}
+      <div class="panel mb-4">
+        <h2 class="form-section">2. Price &amp; stock</h2>
+        <div class="row">
+          <div class="col-md-4">{% include "dashboard/_field.html" with field=vform.mrp %}</div>
+          <div class="col-md-4">{% include "dashboard/_field.html" with field=vform.price %}</div>
+          {% if vform.cost_price %}<div class="col-md-4">{% include "dashboard/_field.html" with field=vform.cost_price %}</div>{% endif %}
+        </div>
+        <div class="row">
+          <div class="col-md-4">{% include "dashboard/_field.html" with field=vform.opening_stock %}</div>
+          <div class="col-md-4">{% include "dashboard/_field.html" with field=vform.low_stock_threshold %}</div>
+          <div class="col-md-4">{% include "dashboard/_field.html" with field=vform.weight_grams %}</div>
+        </div>
+        <div class="row">
+          <div class="col-md-6">{% include "dashboard/_field.html" with field=vform.name %}</div>
+          <div class="col-md-6">{% include "dashboard/_field.html" with field=vform.net_quantity %}</div>
+          <div class="col-md-6">{% include "dashboard/_field.html" with field=vform.sku %}</div>
+        </div>
+        <details>
+          <summary class="small text-muted mb-2">Package size for courier (optional)</summary>
+          <div class="row">
+            <div class="col-4">{% include "dashboard/_field.html" with field=vform.length_cm %}</div>
+            <div class="col-4">{% include "dashboard/_field.html" with field=vform.width_cm %}</div>
+            <div class="col-4">{% include "dashboard/_field.html" with field=vform.height_cm %}</div>
+          </div>
+        </details>
+        {# Hidden defaults so a new product's first pack size is active and listed first #}
+        <input type="hidden" name="{{ vform.is_active.html_name }}" value="on">
+        <input type="hidden" name="{{ vform.sort_order.html_name }}" value="0">
+        <p class="form-text mb-0">Selling more than one size (e.g. Pack of 6 and Pack of 12)? Save this product first, then use “Add pack size”.</p>
+      </div>
+      {% endif %}
+
+      <div class="panel mb-4">
+        <h2 class="form-section">Product page details <span class="text-muted fw-normal small">(what customers ask before buying)</span></h2>
+        {% include "dashboard/_field.html" with field=pform.key_features %}
+        <div class="row">
+          <div class="col-md-6">{% include "dashboard/_field.html" with field=pform.what_you_get %}</div>
+          <div class="col-md-6">{% include "dashboard/_field.html" with field=pform.best_for %}</div>
+        </div>
+        <div class="row">
+          <div class="col-md-4">{% include "dashboard/_field.html" with field=pform.fragrance %}</div>
+          <div class="col-md-4">{% include "dashboard/_field.html" with field=pform.burn_time %}</div>
+          <div class="col-md-4">{% include "dashboard/_field.html" with field=pform.ingredients %}</div>
+        </div>
+      </div>
+
+      <div class="panel mb-4">
+        <h2 class="form-section">Label details <span class="text-muted fw-normal small">(Legal Metrology — must be shown for packaged goods sold online)</span></h2>
+        <p class="form-text mt-0">Copy these exactly from the pack. Net quantity is set per pack size (on the pack size page).</p>
+        <div class="row">
+          <div class="col-md-6">{% include "dashboard/_field.html" with field=pform.manufacturer_name %}</div>
+          <div class="col-md-6">{% include "dashboard/_field.html" with field=pform.country_of_origin %}</div>
+        </div>
+        {% include "dashboard/_field.html" with field=pform.manufacturer_address %}
+        {% include "dashboard/_field.html" with field=pform.packer_details %}
+        {% include "dashboard/_field.html" with field=pform.consumer_care %}
+      </div>
+
+      <div class="panel mb-4">
+        <h2 class="form-section">{% if creating %}3{% else %}2{% endif %}. Google / SEO <span class="text-muted fw-normal small">(optional)</span></h2>
+        {% include "dashboard/_field.html" with field=pform.seo_title %}
+        {% include "dashboard/_field.html" with field=pform.meta_description %}
+      </div>
+    </div>
+
+    <div class="col-xl-4">
+      <div class="panel mb-4">
+        <h2 class="form-section">Status</h2>
+        {% include "dashboard/_field.html" with field=pform.status %}
+        {% include "dashboard/_field.html" with field=pform.is_featured %}
+        {% include "dashboard/_field.html" with field=pform.badge %}
+        {% include "dashboard/_field.html" with field=pform.unit %}
+      </div>
+      <div class="panel mb-4">
+        <h2 class="form-section">Main photo</h2>
+        {% if product.main_image %}<img class="thumb-lg mb-3" src="{{ product.main_image.url }}" alt="{{ product.main_image_alt }}">{% endif %}
+        {% include "dashboard/_field.html" with field=pform.main_image %}
+        {% include "dashboard/_field.html" with field=pform.main_image_alt %}
+      </div>
+
+      {% if creating or can_upload %}
+      <div class="panel mb-4">
+        <h2 class="form-section">More photos &amp; video</h2>
+        {% if media %}
+        <div class="d-flex flex-wrap gap-1 mb-2" aria-label="Already added">
+          {% for m in media|slice:":8" %}{% if m.kind == "video" %}<span class="thumb d-inline-flex align-items-center justify-content-center small text-muted" title="Video">▶</span>{% else %}<img class="thumb" src="{{ m.file.url }}" alt="">{% endif %}{% endfor %}
+        </div>
+        <p class="form-text">{{ media|length }} already added · <a href="#photos">change order or remove</a></p>
+        {% endif %}
+        <label class="dropzone" for="{{ gform.files.id_for_label }}" data-dropzone>
+          <span class="dz-icon" aria-hidden="true">📷</span>
+          <span class="dz-title">Click to choose photos / video</span>
+          <span class="dz-sub">You can select <strong>many photos at once</strong> (hold Ctrl, or drag them here)</span>
+          {{ gform.files }}
+        </label>
+        <div class="dz-preview" data-dz-preview aria-live="polite"></div>
+        <div class="form-text">{{ gform.files.help_text }}</div>
+        {{ gform.files.errors }}
+        <div class="small text-danger mt-1" data-video-msg role="status" aria-live="polite"></div>
+        <p class="form-text mb-0 mt-2">After choosing, press <strong>{% if creating %}Save Product{% else %}Save Changes{% endif %}</strong> to upload.</p>
+      </div>
+      {% endif %}
+
+      <div class="panel mb-4">
+        <h2 class="form-section">Long video</h2>
+        {% include "dashboard/_field.html" with field=pform.video_url %}
+      </div>
+    </div>
+  </div>
+
+  {% if creating or can_change %}
+  <div class="sticky-save">
+    <button class="btn btn-primary px-4" type="submit">{% if creating %}Save Product{% else %}Save Changes{% endif %}</button>
+    <a class="btn btn-secondary" href="{% url 'dashboard:products' %}">Cancel</a>
+  </div>
+  {% endif %}
+</form>
+
+{% if not creating %}
+<div class="panel mt-4" id="pack-sizes">
+  <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+    <h2 class="h5 mb-0">Price, stock &amp; pack sizes</h2>
+    {% if perms.products.add_productvariant %}<a class="btn btn-sm btn-primary" href="{% url 'dashboard:variant_create' product.pk %}">+ Add pack size</a>{% endif %}
+  </div>
+  <div class="table-responsive">
+  <table class="table align-middle mb-0">
+    <thead><tr><th scope="col">Pack size</th><th scope="col">SKU</th><th scope="col" class="text-end">MRP</th><th scope="col" class="text-end">Selling price</th>{% if show_cost %}<th scope="col" class="text-end">Cost</th>{% endif %}<th scope="col" class="text-end">Stock</th><th scope="col"></th></tr></thead>
+    <tbody>
+    {% for v in variants %}
+      <tr>
+        <td>{{ v.name }}{% if not v.is_active %} <span class="badge-s bad">Not for sale</span>{% endif %}</td>
+        <td><code>{{ v.sku }}</code></td>
+        <td class="text-end">{{ v.mrp|inr }}</td>
+        <td class="text-end">{{ v.price|inr }}{% if v.discount_percent %} <span class="small text-success">({{ v.discount_percent }}% off)</span>{% endif %}</td>
+        {% if show_cost %}<td class="text-end">{{ v.cost_price|inr|default:"—" }}</td>{% endif %}
+        <td class="text-end"><span class="{% if v.stock == 0 %}stock-out{% elif v.stock <= v.low_stock_threshold %}stock-low{% else %}stock-ok{% endif %}">{{ v.stock }}</span></td>
+        <td class="text-end text-nowrap">
+          {% if perms.inventory.add_stockmovement %}<a class="btn btn-sm btn-success" href="{% url 'dashboard:stock_in' %}?variant={{ v.pk }}">+ Stock</a>{% endif %}
+          {% if perms.products.change_productvariant %}<a class="btn btn-sm btn-outline-burgundy" href="{% url 'dashboard:variant_edit' v.pk %}">Edit</a>{% endif %}
+        </td>
+      </tr>
+    {% empty %}
+      <tr><td colspan="7" class="text-muted">No pack sizes yet — this product cannot be sold until you add one.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+
+<div class="panel mt-4" id="photos">
+  <h2 class="h5">More photos &amp; videos — order &amp; remove</h2>
+  {% if media %}
+  <form method="post" action="{% url 'dashboard:gallery_update' product.pk %}">
+    {% csrf_token %}
+    <div class="gallery-grid mb-3">
+      {% for m in media %}
+      <div class="g-item">
+        {% if m.kind == "video" %}<video src="{{ m.file.url }}" muted preload="metadata" controls></video>{% else %}<img src="{{ m.file.url }}" alt="{{ m.alt_text }}" loading="lazy">{% endif %}
+        <label class="form-label mt-2 mb-1" for="o{{ m.pk }}">Order</label>
+        <input class="form-control form-control-sm" type="number" min="0" id="o{{ m.pk }}" name="order_{{ m.pk }}" value="{{ m.sort_order }}">
+        <label class="form-label mt-2 mb-1" for="a{{ m.pk }}">Description</label>
+        <input class="form-control form-control-sm" id="a{{ m.pk }}" name="alt_{{ m.pk }}" value="{{ m.alt_text }}" maxlength="150">
+        {% if perms.products.delete_productmedia %}<button class="btn btn-sm btn-outline-danger w-100 mt-2" type="submit" name="delete" value="{{ m.pk }}" onclick="return confirm('Remove this file?')">Remove</button>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% if perms.products.change_productmedia %}<button class="btn btn-sm btn-secondary" type="submit">Save order &amp; descriptions</button>{% endif %}
+  </form>
+  {% else %}<p class="text-muted">No extra photos yet.</p>{% endif %}
+  <p class="form-text mb-0">To add more, use “More photos &amp; short video” in the Photos &amp; video box above, then press Save Changes.</p>
+</div>
+{% endif %}
+{% endblock %}

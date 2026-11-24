@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}Order {{ order.order_number }} — please complete your payment of {{ order.grand_total|inr }}{% endautoescape %}

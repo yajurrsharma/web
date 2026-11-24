@@ -1,0 +1,11 @@
+{% load store %}{% autoescape off %}Your order {{ order.order_number }} is on its way.
+{% if order.tracking_number %}Courier: {{ order.courier_name }}
+Tracking number: {{ order.tracking_number }}
+{% if order.tracking_url %}Track: {{ order.tracking_url }}
+{% endif %}{% endif %}{% if order.is_cod %}
+Please keep {{ order.grand_total|inr }} ready for the delivery person.{% endif %}
+
+{{ SITE_URL }}{{ order.get_absolute_url }}
+
+— {{ store.store_name }}
+{% endautoescape %}

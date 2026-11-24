@@ -1,0 +1,4 @@
+{% extends "emails/_base.html" %}{% load store %}
+{% block body %}
+<p>Order <strong>{{ order.order_number }}</strong> has been cancelled.</p>{% if reason %}<p>Reason: {{ reason }}</p>{% endif %}{% if order.is_paid %}<p>Your refund will be processed to the original payment method. We'll email you when it's done.</p>{% endif %}<p style="margin:20px 0;"><a href="{{ SITE_URL }}{{ order.get_absolute_url }}" style="background:#6E1423;color:#ffffff;padding:10px 18px;border-radius:4px;text-decoration:none;display:inline-block;">View order</a></p>
+{% endblock %}

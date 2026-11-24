@@ -1,0 +1,21 @@
+{% load store %}{% autoescape off %}Thank you, {{ order.customer_name }}!
+
+We have reserved your order {{ order.order_number }}. Please pay {{ order.grand_total|inr }} by {{ order.payment_due_by|date:"j M Y, g:i A" }}, otherwise the order is cancelled automatically.
+{% if order.payment_method == "upi" %}
+Pay by UPI to: {{ store.upi_id }} ({{ store.upi_payee_name }})
+Write {{ order.order_number }} in the payment note.
+{% else %}
+Bank transfer (NEFT / IMPS / RTGS):
+Account name: {{ store.bank_account_name }}
+Account number: {{ store.bank_account_number }}
+IFSC: {{ store.bank_ifsc }}
+Bank: {{ store.bank_name }}{% if store.bank_branch %}, {{ store.bank_branch }}{% endif %}
+Write {{ order.order_number }} in the remarks.
+{% endif %}
+After paying, enter the UTR / reference number on your order page so we can match your payment:
+{{ SITE_URL }}{{ order.get_absolute_url }}
+
+We dispatch your order once the payment reaches our account.
+
+— {{ store.store_name }}
+{% endautoescape %}

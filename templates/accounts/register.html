@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Create an account — {{ SITE_NAME }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="container" style="max-width: 460px">
+  <h1 class="mb-3">Create an account</h1>
+  <form method="post" class="panel" novalidate data-once>
+    {% csrf_token %}
+    {% if form.errors %}<div class="alert alert-info py-2 small">For your security the password boxes are cleared — please type your password again in <strong>both</strong> boxes.</div>{% endif %}
+    {% include "includes/form_fields.html" %}
+    {% include "includes/policy_buttons.html" with show_all=True %}
+    <p class="small text-muted">By creating an account you agree to our Terms and Privacy Policy. We'll email you a 6-digit code to confirm your address.</p>
+    <button type="submit" class="btn btn-primary w-100" data-busy="Creating account…">Create account</button>
+  </form>
+  <p class="mt-3">Already have an account? <a href="{% url 'accounts:login' %}">Log in</a></p>
+</div>
+{% endblock %}

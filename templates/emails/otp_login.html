@@ -1,0 +1,4 @@
+{% extends "emails/_base.html" %}{% load store %}
+{% block body %}
+<p>Your login code is</p><p style="font-size:32px;letter-spacing:6px;font-weight:bold;color:#6E1423;margin:8px 0;">{{ code }}</p><p>It expires in {{ minutes }} minutes. If you didn't try to log in, you can ignore this email — your account is safe.</p>
+{% endblock %}

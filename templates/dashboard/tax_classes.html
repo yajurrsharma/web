@@ -1,0 +1,48 @@
+{% extends "dashboard/_layout.html" %}
+{% load store %}
+{% block title %}HSN & GST Rates — Dashboard{% endblock %}
+{% block dash %}
+<h1>HSN &amp; GST Rates</h1>
+<p class="subtitle">Each product uses one of these. Ask your CA to confirm the HSN code and GST rate, then tick “Confirmed by my CA”.</p>
+
+<div class="row g-4">
+  <div class="col-xl-7">
+    <div class="panel">
+      <div class="table-responsive">
+      <table class="table align-middle mb-0">
+        <thead><tr><th scope="col">Name</th><th scope="col">HSN</th><th scope="col" class="text-end">GST</th><th scope="col" class="text-end">Products</th><th scope="col">CA check</th><th scope="col"></th></tr></thead>
+        <tbody>
+        {% for t in taxes %}
+          <tr{% if obj and obj.pk == t.pk %} class="table-active"{% endif %}>
+            <td>{{ t.name }}{% if t.notes %}<div class="small text-muted">{{ t.notes }}</div>{% endif %}</td>
+            <td><code>{{ t.hsn_code }}</code></td><td class="text-end">{{ t.gst_rate|pct }}</td><td class="text-end">{{ t.n }}</td>
+            <td>{% if t.confirmed_by_ca %}<span class="badge-s ok">Confirmed</span>{% else %}<span class="badge-s warn">Not confirmed</span>{% endif %}</td>
+            <td class="text-end"><a class="btn btn-sm btn-outline-burgundy" href="{% url 'dashboard:tax_class_edit' t.pk %}">{% if perms.products.change_taxclass %}Edit{% else %}View{% endif %}</a></td>
+          </tr>
+        {% empty %}<tr><td colspan="6" class="text-muted">No HSN &amp; GST rates yet. Add one using the form.</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-5">
+    <form method="post" class="panel" novalidate>
+      {% csrf_token %}
+      <h2 class="form-section">{% if obj %}Edit “{{ obj.name }}”{% else %}Add HSN &amp; GST rate{% endif %}</h2>
+      {% if obj %}{% with n=obj.products.count %}{% if n %}<div class="alert alert-warning py-2">Changing this affects {{ n }} product(s) on future invoices. Invoices already issued do not change.</div>{% endif %}{% endwith %}{% endif %}
+      {{ form.non_field_errors }}
+      {% include "dashboard/_field.html" with field=form.name %}
+      <div class="row">
+        <div class="col-6">{% include "dashboard/_field.html" with field=form.hsn_code %}</div>
+        <div class="col-6">{% include "dashboard/_field.html" with field=form.gst_rate %}</div>
+      </div>
+      {% include "dashboard/_field.html" with field=form.notes %}
+      {% include "dashboard/_field.html" with field=form.confirmed_by_ca %}
+      {% if can_save %}<button class="btn btn-primary" type="submit">{% if obj %}Save Changes{% else %}Add Rate{% endif %}</button>{% endif %}
+      {% if obj %}<a class="btn btn-secondary" href="{% url 'dashboard:tax_classes' %}">Cancel</a>{% endif %}
+      {% if not can_save %}<p class="form-text mt-2">Only the owner or Accounts staff can change HSN &amp; GST rates.</p>{% endif %}
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,7 @@
+{% load store %}{% autoescape off %}Your {{ req.get_kind_display|lower }} request for order {{ order.order_number }} is now: {{ req.get_status_display }}.
+{% if req.staff_note %}Note from our team: {{ req.staff_note }}
+{% endif %}
+{{ SITE_URL }}{{ order.get_absolute_url }}
+
+— {{ store.store_name }}
+{% endautoescape %}

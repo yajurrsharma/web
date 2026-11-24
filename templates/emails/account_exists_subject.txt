@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}You already have a {{ store.store_name }} account{% endautoescape %}

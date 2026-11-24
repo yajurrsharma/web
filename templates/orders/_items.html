@@ -1,0 +1,25 @@
+{% load store %}
+<div class="table-responsive">
+<table class="table align-middle">
+  <thead><tr><th scope="col">Item</th><th scope="col" class="text-end">Qty</th><th scope="col" class="text-end">Price</th><th scope="col" class="text-end">Amount</th></tr></thead>
+  <tbody>
+    {% for i in order.items.all %}
+    <tr>
+      <td>{% if i.product_slug %}<a href="{% url 'products:detail' i.product_slug %}">{{ i.description }}</a>{% else %}{{ i.description }}{% endif %}<div class="text-muted small">SKU {{ i.sku }}</div></td>
+      <td class="text-end">{{ i.quantity }}</td>
+      <td class="text-end">{{ i.unit_price|inr }}</td>
+      <td class="text-end">{{ i.line_gross|inr }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+</div>
+<div class="ms-auto" style="max-width: 360px">
+  <div class="summary-row"><span>Items</span><span>{{ order.subtotal|inr }}</span></div>
+  {% if order.discount_total %}<div class="summary-row" style="color:var(--ok)"><span>Coupon {{ order.coupon_code }}</span><span>−{{ order.discount_total|inr }}</span></div>{% endif %}
+  <div class="summary-row"><span>Delivery{% if order.cod_fee %} + COD fee{% endif %}</span><span>{% if order.shipping_total %}{{ order.shipping_total|inr }}{% else %}Free{% endif %}</span></div>
+  {% if order.round_off %}<div class="summary-row"><span>Round off</span><span>{{ order.round_off|inr }}</span></div>{% endif %}
+  <div class="summary-row summary-total"><span>Total</span><span>{{ order.grand_total|inr }}</span></div>
+  <div class="text-muted small">{% if order.prices_include_gst %}Includes{% else %}Plus{% endif %} GST {{ order.tax_total|inr }}</div>
+  {% if order.refunded_total %}<div class="summary-row"><span>Refunded</span><span>{{ order.refunded_total|inr }}</span></div>{% endif %}
+</div>

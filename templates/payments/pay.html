@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% load store %}
+{% block title %}Pay for order {{ order.order_number }} — {{ SITE_NAME }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+{% if is_test_mode %}<div class="test-ribbon">Test mode — no real money will be charged. Use Razorpay test cards or UPI test IDs.</div>{% endif %}
+<div class="container" style="max-width: 560px">
+  <h1 class="mt-3">Complete your payment</h1>
+  <div class="panel mt-3">
+    <div class="summary-row"><span>Order</span><strong>{{ order.order_number }}</strong></div>
+    <div class="summary-row summary-total"><span>Amount to pay</span><span>{{ order.grand_total|inr }}</span></div>
+    <button id="pay-btn" class="btn btn-primary btn-lg w-100 mt-3" type="button">Pay {{ order.grand_total|inr }}</button>
+    <p class="small text-muted mt-2 mb-0">Secure payment by Razorpay — UPI, cards, net banking and wallets. We never see your card details.</p>
+    <noscript><p class="alert alert-warning mt-3 mb-0">JavaScript is needed for online payment. Please enable it, or go back and choose Cash on Delivery.</p></noscript>
+  </div>
+  <p class="mt-3"><a href="{{ order.get_absolute_url }}">View order details</a></p>
+
+  <form id="rzp-callback" method="post" action="{% url 'payments:callback' order.order_number %}" hidden>
+    {% csrf_token %}
+    <input type="hidden" name="razorpay_payment_id">
+    <input type="hidden" name="razorpay_order_id">
+    <input type="hidden" name="razorpay_signature">
+    <input type="hidden" name="error_description">
+  </form>
+</div>
+{% endblock %}
+{% block extra_js %}
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<script>
+(function () {
+  var form = document.getElementById("rzp-callback");
+  var options = {
+    key: "{{ razorpay_key_id|escapejs }}",
+    amount: {{ amount_paise }},
+    currency: "INR",
+    name: "{{ SITE_NAME|escapejs }}",
+    description: "Order {{ order.order_number|escapejs }}",
+    order_id: "{{ payment.gateway_order_id|escapejs }}",
+    prefill: { name: "{{ order.customer_name|escapejs }}", email: "{{ order.email|escapejs }}", contact: "{{ order.phone|escapejs }}" },
+    notes: { order_number: "{{ order.order_number|escapejs }}" },
+    // Payment methods switched on/off in Store settings (Razorpay may still hide ones not activated on the account).
+    method: {
+      upi: {{ store.razorpay_show_upi|yesno:"true,false" }},
+      card: {{ store.razorpay_show_cards|yesno:"true,false" }},
+      netbanking: {{ store.razorpay_show_netbanking|yesno:"true,false" }},
+      wallet: {{ store.razorpay_show_wallets|yesno:"true,false" }}
+    },
+    theme: { color: "{{ store.colors.strip|escapejs }}" },
+    handler: function (resp) {
+      form.razorpay_payment_id.value = resp.razorpay_payment_id;
+      form.razorpay_order_id.value = resp.razorpay_order_id;
+      form.razorpay_signature.value = resp.razorpay_signature;
+      form.submit();
+    },
+    modal: { ondismiss: function () { document.getElementById("pay-btn").disabled = false; } }
+  };
+  var btn = document.getElementById("pay-btn");
+  btn.addEventListener("click", function () {
+    if (typeof Razorpay === "undefined") { alert("Couldn't load the payment window. Check your connection and try again."); return; }
+    btn.disabled = true;
+    var rzp = new Razorpay(options);
+    rzp.on("payment.failed", function (resp) {
+      form.error_description.value = (resp.error && resp.error.description) || "Payment failed";
+      form.submit();
+    });
+    rzp.open();
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% load store %}
+<div class="results-bar">
+  <div class="count" role="status">
+    {% if page_obj.paginator.count %}{{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} result{{ page_obj.paginator.count|pluralize }}{% else %}0 results{% endif %}{% if q %} for <strong>“{{ q }}”</strong>{% elif category %} in <strong>{{ category.name }}</strong>{% endif %}
+  </div>
+  <form method="get" class="d-flex align-items-center gap-2" data-autosubmit>
+    {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+    {% if min %}<input type="hidden" name="min" value="{{ min }}">{% endif %}
+    {% if max %}<input type="hidden" name="max" value="{{ max }}">{% endif %}
+    {% if in_stock %}<input type="hidden" name="in_stock" value="1">{% endif %}
+    <label class="small text-nowrap" for="f-sort">Sort by:</label>
+    <select class="form-select" id="f-sort" name="sort">
+      {% for key, label in sorts %}<option value="{{ key }}"{% if key == sort %} selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <noscript><button class="btn btn-sm btn-cta" type="submit">Go</button></noscript>
+  </form>
+</div>
+
+<div class="row g-3">
+  <aside class="col-lg-3 col-xl-2" aria-label="Filters">
+    <div class="filters">
+      {% if categories %}
+      <h2>Category</h2>
+      <ul>
+        <li><a href="{% url 'products:shop' %}{% if q %}?q={{ q|urlencode }}{% endif %}" class="{% if not category %}active{% endif %}">All products</a></li>
+        {% for c in categories %}<li><a href="{{ c.get_absolute_url }}" class="{% if category.pk == c.pk %}active{% endif %}">{{ c.name }}</a>
+          {% if c.children.all %}<ul class="ps-3">{% for ch in c.children.all %}{% if ch.is_active %}<li><a href="{{ ch.get_absolute_url }}" class="{% if category.pk == ch.pk %}active{% endif %}">{{ ch.name }}</a></li>{% endif %}{% endfor %}</ul>{% endif %}
+        </li>{% endfor %}
+      </ul>
+      {% endif %}
+
+      <h2>Price</h2>
+      <ul class="price-links">
+        <li><a href="?{% if q %}q={{ q|urlencode }}&{% endif %}sort={{ sort }}&max=100" class="{% if max == '100' and not min %}active{% endif %}">Under ₹100</a></li>
+        <li><a href="?{% if q %}q={{ q|urlencode }}&{% endif %}sort={{ sort }}&min=100&max=250" class="{% if min == '100' and max == '250' %}active{% endif %}">₹100 – ₹250</a></li>
+        <li><a href="?{% if q %}q={{ q|urlencode }}&{% endif %}sort={{ sort }}&min=250&max=500" class="{% if min == '250' and max == '500' %}active{% endif %}">₹250 – ₹500</a></li>
+        <li><a href="?{% if q %}q={{ q|urlencode }}&{% endif %}sort={{ sort }}&min=500" class="{% if min == '500' and not max %}active{% endif %}">Over ₹500</a></li>
+      </ul>
+      <form method="get" class="mt-2">
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <div class="d-flex gap-1 align-items-center">
+          <label class="visually-hidden" for="f-min">Minimum price</label>
+          <input class="form-control form-control-sm" id="f-min" name="min" inputmode="numeric" placeholder="₹ Min" value="{{ min }}">
+          <label class="visually-hidden" for="f-max">Maximum price</label>
+          <input class="form-control form-control-sm" id="f-max" name="max" inputmode="numeric" placeholder="₹ Max" value="{{ max }}">
+          <button class="btn btn-sm btn-outline-secondary" type="submit">Go</button>
+        </div>
+        <h2>Availability</h2>
+        <div class="form-check">
+          <input class="form-check-input" type="checkbox" name="in_stock" value="1" id="f-stock"{% if in_stock %} checked{% endif %} onchange="this.form.submit()">
+          <label class="form-check-label" for="f-stock">In stock only</label>
+        </div>
+        <noscript><button class="btn btn-sm btn-cta mt-2" type="submit">Apply</button></noscript>
+      </form>
+      {% if min or max or in_stock %}<p class="mt-3 mb-0"><a href="?{% if q %}q={{ q|urlencode }}&{% endif %}sort={{ sort }}">Clear filters</a></p>{% endif %}
+    </div>
+  </aside>
+
+  <div class="col-lg-9 col-xl-10">
+    {% if products %}
+    <div class="grid-products wide">
+      {% for p in products %}{% include "includes/product_card.html" %}{% endfor %}
+    </div>
+    {% if page_obj.has_other_pages %}
+    <nav class="mt-4 d-flex justify-content-center" aria-label="Pages">
+      <ul class="pagination">
+        {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="{% page_url page_obj.previous_page_number %}">‹ Previous</a></li>{% endif %}
+        <li class="page-item active" aria-current="page"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="{% page_url page_obj.next_page_number %}">Next ›</a></li>{% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+    {% else %}
+    <div class="box">
+      <h2 class="h5">No results{% if q %} for “{{ q }}”{% endif %}</h2>
+      <p class="mb-0">Try checking your spelling or use fewer words. <a href="{% url 'products:shop' %}">See all products</a></p>
+    </div>
+    {% endif %}
+  </div>
+</div>

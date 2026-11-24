@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load store %}
+{% block title %}Your cart — {{ SITE_NAME }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="container">
+  <h1 class="mb-4">Your cart</h1>
+  {% if lines %}
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <ul class="list-unstyled mb-0">
+        {% for item, line in lines %}
+        <li class="d-flex gap-3 py-3 border-bottom">
+          <a href="{{ item.variant.product.get_absolute_url }}" class="flex-shrink-0" style="width:88px">
+            <div class="product-card"><div class="thumb">{% if item.variant.product.main_image %}<img src="{{ item.variant.product.main_image|thumb:160 }}" alt="" loading="lazy">{% endif %}</div></div>
+          </a>
+          <div class="flex-grow-1">
+            <a class="fw-semibold text-decoration-none" href="{{ item.variant.product.get_absolute_url }}?v={{ item.variant.pk }}">{{ item.variant.product.name }}</a>
+            {% if item.variant.name != "Standard" %}<div class="text-muted small">{{ item.variant.name }}</div>{% endif %}
+            <div class="mt-1"><span class="price">{{ line.unit_price|inr }}</span>{% if line.mrp > line.unit_price %}<span class="mrp">{{ line.mrp|inr }}</span>{% endif %}</div>
+            {% if item.variant.is_low_stock %}<div class="stock-low">Only {{ item.variant.stock }} left</div>{% endif %}
+            <div class="d-flex flex-wrap align-items-center gap-2 mt-2">
+              <form method="post" action="{% url 'cart:update' item.pk %}" class="d-flex gap-2 align-items-center">
+                {% csrf_token %}
+                <label class="visually-hidden" for="q{{ item.pk }}">Quantity for {{ item.variant }}</label>
+                <input class="form-control form-control-sm qty-input" type="number" id="q{{ item.pk }}" name="quantity" value="{{ item.quantity }}" min="0" max="{{ item.variant.stock }}">
+                <button class="btn btn-sm btn-outline-burgundy" type="submit">Update</button>
+              </form>
+              <form method="post" action="{% url 'cart:remove' item.pk %}">{% csrf_token %}
+                <button class="btn btn-sm btn-link px-1" type="submit">Remove</button>
+              </form>
+            </div>
+          </div>
+          <div class="text-end fw-semibold">{{ line.gross|inr }}</div>
+        </li>
+        {% endfor %}
+      </ul>
+      <a class="d-inline-block mt-3" href="{% url 'products:shop' %}">Continue shopping</a>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="panel">
+        <h2 class="h4">Order summary</h2>
+        {% include "orders/_totals.html" with quote=quote %}
+        {% if ship_pct is not None %}
+        <div class="ship-progress" role="status">
+          {% if ship_pct >= 100 %}<strong class="text-success">🎉 You've unlocked FREE delivery!</strong>
+          {% else %}🚚 Add <strong>{{ quote.free_shipping_gap|inr_short }}</strong> more for <strong>FREE delivery</strong>{% endif %}
+          <div class="bar" aria-hidden="true"><i style="width:{{ ship_pct }}%"></i></div>
+        </div>
+        {% endif %}
+        <form method="post" action="{% url 'cart:apply_coupon' %}" class="mt-3">
+          {% csrf_token %}
+          {% if cart.coupon %}
+            <p class="mb-1">Coupon <strong>{{ cart.coupon.code }}</strong> applied.</p>
+          {% else %}
+            <label class="form-label" for="coupon">Coupon code</label>
+            <div class="input-group">
+              <input class="form-control text-uppercase" id="coupon" name="code" autocomplete="off">
+              <button class="btn btn-outline-burgundy" type="submit">Apply</button>
+            </div>
+          {% endif %}
+        </form>
+        {% if cart.coupon %}
+        <form method="post" action="{% url 'cart:remove_coupon' %}">{% csrf_token %}<button class="btn btn-link btn-sm px-0" type="submit">Remove coupon</button></form>
+        {% endif %}
+        <a class="btn btn-primary btn-lg w-100 mt-3" href="{% url 'orders:checkout' %}">Proceed to checkout</a>
+        {% if not user.is_authenticated %}<p class="small text-muted mt-2 mb-0">You'll log in or create an account at checkout. Your cart is kept.</p>{% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="panel-quiet">
+    <h2 class="h4">Your cart is empty</h2>
+    <p>Browse our agarbatti, dhoop, sambrani cups and diya batti.</p>
+    <a class="btn btn-primary" href="{% url 'products:shop' %}">Shop products</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

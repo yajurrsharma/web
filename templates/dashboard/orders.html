@@ -1,0 +1,24 @@
+{% extends "dashboard/_layout.html" %}
+{% load store %}
+{% block title %}Orders — Dashboard{% endblock %}
+{% block dash %}
+<div class="d-flex justify-content-between align-items-baseline flex-wrap gap-2">
+  <h1 class="mb-3">Orders</h1>
+  <a class="btn btn-sm btn-outline-burgundy" href="?{{ querystring }}{% if querystring %}&{% endif %}format=csv">Export CSV</a>
+</div>
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-4"><label class="visually-hidden" for="oq">Search</label><input class="form-control" id="oq" name="q" value="{{ q }}" placeholder="Order no., name, email, phone, AWB"></div>
+  <div class="col-6 col-md-2"><label class="visually-hidden" for="os">Status</label><select class="form-select" id="os" name="status"><option value="">Any status</option>{% for k, v in statuses %}<option value="{{ k }}"{% if k == status %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><label class="visually-hidden" for="op">Payment</label><select class="form-select" id="op" name="payment"><option value="">Any payment</option>{% for k, v in pay_statuses %}<option value="{{ k }}"{% if k == pay %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><label class="visually-hidden" for="om">Method</label><select class="form-select" id="om" name="method"><option value="">Any method</option>{% for k, v in methods %}<option value="{{ k }}"{% if k == method %} selected{% endif %}>{{ v }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><button class="btn btn-primary w-100" type="submit">Filter</button></div>
+</form>
+<div class="panel">{% include "dashboard/_orders_table.html" %}</div>
+{% if page_obj.has_other_pages %}
+<nav class="mt-3" aria-label="Pages"><ul class="pagination">
+  {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="{% page_url page_obj.previous_page_number %}">Previous</a></li>{% endif %}
+  <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+  {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="{% page_url page_obj.next_page_number %}">Next</a></li>{% endif %}
+</ul></nav>
+{% endif %}
+{% endblock %}

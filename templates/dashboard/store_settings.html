@@ -1,0 +1,56 @@
+{% extends "dashboard/_layout.html" %}
+{% block title %}Store Settings — Dashboard{% endblock %}
+{% block dash %}
+<div class="top-actions">
+  <div>
+    <h1>Store Settings</h1>
+    <p class="subtitle mb-0">Payments, product cards, home slider and colour theme. GST, invoice and shipping rules are under <a href="{% url 'admin:core_sitesettings_changelist' %}">Store &amp; GST details (admin)</a>.</p>
+  </div>
+  <a class="btn btn-outline-burgundy" href="{% url 'core:home' %}" target="_blank" rel="noopener">View shop ↗</a>
+</div>
+
+{% if form.errors %}<div class="alert alert-danger">Please correct the fields marked in red below.{{ form.non_field_errors }}</div>{% endif %}
+{% if not payments_configured %}<div class="alert alert-warning py-2">Razorpay keys are not set on the server yet, so “Online payment (Razorpay)” stays hidden from customers even when switched on.</div>{% endif %}
+
+<form method="post" novalidate>
+  {% csrf_token %}
+  <div class="row g-4">
+    {% for title, note, fields in form.sections %}
+    <div class="col-xl-6">
+      <section class="panel h-100">
+        <h2 class="form-section">{{ title }}</h2>
+        {% if note %}<p class="form-text mt-0 mb-3">{{ note }}</p>{% endif %}
+        {% if title == "Colour theme" %}
+        <div class="d-flex flex-wrap gap-2 mb-3" role="list" aria-label="Theme previews">
+          {% for key, t in themes.items %}
+          <button type="button" class="btn p-0 border-0 text-start" role="listitem" data-theme-pick="{{ key }}" title="{{ t.0 }}" style="width:150px">
+            <span style="display:block;height:20px;background:{{ t.1 }};border-radius:6px 6px 0 0"></span>
+            <span style="display:block;height:12px;background:{{ t.2 }}"></span>
+            <span style="display:block;height:8px;background:{{ t.3 }};border-radius:0 0 6px 6px"></span>
+            <span class="small d-block mt-1 lh-sm">{{ t.0 }}</span>
+          </button>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% for field in fields %}{% include "dashboard/_field.html" %}{% endfor %}
+      </section>
+    </div>
+    {% endfor %}
+  </div>
+  {% if can_save %}
+  <div class="sticky-save mt-3">
+    <button class="btn btn-primary px-4" type="submit">Save Settings</button>
+  </div>
+  {% else %}<p class="form-text mt-3">You can view these settings but not change them.</p>{% endif %}
+</form>
+{% endblock %}
+{% block extra_js %}
+<script>
+document.querySelectorAll("[data-theme-pick]").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var sel = document.getElementById("id_theme");
+    if (sel) { sel.value = b.dataset.themePick; sel.focus(); }
+  });
+});
+</script>
+{% endblock %}

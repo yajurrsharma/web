@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}Payment not completed — order {{ order.order_number }}{% endautoescape %}

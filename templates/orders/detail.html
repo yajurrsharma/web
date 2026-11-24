@@ -1,0 +1,101 @@
+{% extends "accounts/_layout.html" %}
+{% load store %}
+{% block title %}Order {{ order.order_number }} — {{ SITE_NAME }}{% endblock %}
+{% block account %}
+<div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2">
+  <h1 class="mb-1">Order {{ order.order_number }}</h1>
+  <span class="text-muted">Placed {{ order.created_at|date:"j M Y, g:i A" }}</span>
+</div>
+<p class="mb-3">
+  <span class="status-pill s-{{ order.status }}">{{ order.get_status_display }}</span>
+  <span class="status-pill s-{{ order.payment_status }}">Payment: {{ order.get_payment_status_display }}</span>
+  <span class="text-muted ms-1">{{ order.get_payment_method_display }}</span>
+</p>
+
+{% if order.awaiting_online_payment %}
+<div class="alert alert-warning d-flex flex-wrap justify-content-between align-items-center gap-2">
+  <span>We haven't received payment for this order yet.{% if order.payment_due_by %} Please pay by {{ order.payment_due_by|date:"g:i A" }} or it will be released.{% endif %}</span>
+  <a class="btn btn-primary btn-sm" href="{% url 'payments:pay' order.order_number %}">Pay {{ order.grand_total|inr }}</a>
+</div>
+{% endif %}
+{% if manual_pay %}{% include "orders/_manual_pay.html" %}{% endif %}
+{% if order.status == "delivered" %}
+<div class="panel-quiet mb-3" id="rate">
+  <strong>⭐ How did you like your order?</strong> Your review helps other devotees choose.
+  <div class="d-flex flex-wrap gap-2 mt-2">
+    {% for i in order.items.all %}{% if i.product_slug and i.unit_price > 0 %}<a class="btn btn-sm btn-cta" href="{% url 'products:review' i.product_slug %}">Rate {{ i.product_name|truncatechars:30 }}</a>{% endif %}{% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if order.tracking_number %}
+<div class="panel-quiet mb-3">
+  <strong>Shipped with {{ order.courier_name }}</strong> — tracking number {{ order.tracking_number }}
+  {% if order.tracking_url %}<a class="ms-2" href="{{ order.tracking_url }}" target="_blank" rel="noopener">Track on courier website</a>{% endif %}
+  {% with events=order.shipment.events.all %}{% if events %}
+  <ol class="timeline mt-3 mb-0" aria-label="Courier updates">
+    {% for e in events|slice:":8" %}<li><strong>{{ e.status|title }}</strong>{% if e.location %} — {{ e.location }}{% endif %}<div class="small text-muted">{{ e.event_time|default:e.created_at|date:"j M, g:i A" }}</div></li>{% endfor %}
+  </ol>
+  {% endif %}{% endwith %}
+</div>
+{% endif %}
+
+<div class="panel">{% include "orders/_items.html" %}</div>
+
+<div class="row g-3 mt-1">
+  <div class="col-md-6"><div class="panel-quiet h-100"><h2 class="h6">Delivery address</h2>{% include "orders/_address.html" with a=order.shipping_address %}</div></div>
+  <div class="col-md-6"><div class="panel-quiet h-100"><h2 class="h6">Billing address</h2>{% include "orders/_address.html" with a=order.billing_address %}{% if order.customer_gstin %}<div class="mt-1">GSTIN {{ order.customer_gstin }}</div>{% endif %}</div></div>
+</div>
+
+<div class="row g-4 mt-1">
+  <div class="col-md-6">
+    <h2 class="h5">Order progress</h2>
+    <ol class="timeline">
+      {% for h in history %}
+      <li><div>{% if h.field == "payment" %}Payment {{ h.to_value }}{% elif h.field == "order" %}{{ h.to_value|capfirst }}{% else %}Update{% endif %}{% if h.note %} — {{ h.note }}{% endif %}</div>
+          <div class="text-muted small">{{ h.created_at|date:"j M Y, g:i A" }}</div></li>
+      {% endfor %}
+    </ol>
+  </div>
+  <div class="col-md-6">
+    <h2 class="h5">Documents</h2>
+    {% if invoice %}
+      <p><a class="btn btn-outline-burgundy btn-sm" href="{{ invoice.get_pdf_url }}">Download GST invoice {{ invoice.number }}</a></p>
+      {% for cn in invoice.credit_notes.all %}<p class="mb-1"><a href="{{ cn.get_pdf_url }}">Credit note {{ cn.number }}</a></p>{% endfor %}
+    {% else %}
+      <p class="text-muted">Your GST invoice will appear here once it's issued{% if store.invoice_trigger == "dispatch" %}, when your order ships{% endif %}.</p>
+    {% endif %}
+
+    {% for r in order.requests.all %}
+      <div class="panel-quiet mb-2"><strong>{% if r.kind == "return" %}Problem report{% else %}{{ r.get_kind_display }} request{% endif %}:</strong> {{ r.get_status_display }}{% if r.problem %}<br><span class="small">{{ r.get_problem_display }}</span>{% endif %}{% if r.staff_note %}<br><span class="small">{{ r.staff_note }}</span>{% endif %}</div>
+    {% endfor %}
+
+    {% if can_cancel %}
+    <details class="mt-3"><summary class="btn btn-link px-0">Cancel this order</summary>
+      <form method="post" action="{% url 'orders:cancel' order.order_number %}" class="mt-2" data-once>
+        {% csrf_token %}
+        <label class="form-label" for="cancel-reason">Why are you cancelling?</label>
+        <textarea class="form-control" id="cancel-reason" name="reason" rows="3" maxlength="500" required></textarea>
+        <button class="btn btn-outline-burgundy mt-2" type="submit">{% if order.is_paid %}Request cancellation{% else %}Cancel order{% endif %}</button>
+      </form>
+    </details>
+    {% endif %}
+    {% if can_return %}
+    <details class="mt-3 report-box" id="report"{% if messages %} open{% endif %}><summary class="btn btn-outline-burgundy btn-sm">⚠ Report a problem with this order</summary>
+      <form method="post" enctype="multipart/form-data" action="{% url 'orders:request_return' order.order_number %}" class="mt-2" data-once data-problem-form data-photo-optional="{{ photo_optional|join:',' }}">
+        {% csrf_token %}
+        <p class="small text-muted mb-2">Received a damaged, wrong or missing item? Tell us within {{ store.return_window_days }} day{{ store.return_window_days|pluralize }} of delivery. We replace or refund it after checking — we can't accept returns for a change of mind on puja items.</p>
+        <fieldset class="mb-2"><legend class="form-label fw-semibold fs-6 mb-1">What went wrong?</legend>
+          {% for radio in problem_form.problem %}<div class="form-check">{{ radio.tag }}<label class="form-check-label" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label></div>{% endfor %}
+        </fieldset>
+        <label class="form-label fw-semibold" for="{{ problem_form.reason.id_for_label }}">{{ problem_form.reason.label }}</label>
+        {{ problem_form.reason }}
+        <label class="form-label fw-semibold mt-2" for="{{ problem_form.photos.id_for_label }}">Photos <span class="fw-normal small text-muted" data-photo-hint>(required — up to 4: the item, the damage, and the parcel label)</span></label>
+        {{ problem_form.photos }}
+        <button class="btn btn-cta mt-3" type="submit">Send report</button>
+      </form>
+    </details>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

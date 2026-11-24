@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}New contact message: {{ msg.subject }}{% endautoescape %}

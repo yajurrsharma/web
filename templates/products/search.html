@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{% if q %}Search: {{ q }}{% else %}Search{% endif %} — {{ SITE_NAME }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="container-shop">
+  <h1 class="visually-hidden">{% if q %}Results for “{{ q }}”{% else %}Search products{% endif %}</h1>
+  {% include "products/_listing.html" %}
+</div>
+{% endblock %}

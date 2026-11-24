@@ -1,0 +1,4 @@
+{% extends "emails/_base.html" %}{% load store %}
+{% block body %}
+<p>Your order <strong>{{ order.order_number }}</strong> is on its way.</p>{% if order.tracking_number %}<p>Courier: {{ order.courier_name }}<br>Tracking number: <strong>{{ order.tracking_number }}</strong>{% if order.tracking_url %}<br><a href="{{ order.tracking_url }}">Track your parcel</a>{% endif %}</p>{% endif %}{% if order.is_cod %}<p>Please keep <strong>{{ order.grand_total|inr }}</strong> ready for the delivery person.</p>{% endif %}<p style="margin:20px 0;"><a href="{{ SITE_URL }}{{ order.get_absolute_url }}" style="background:#6E1423;color:#ffffff;padding:10px 18px;border-radius:4px;text-decoration:none;display:inline-block;">View order</a></p>
+{% endblock %}

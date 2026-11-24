@@ -1,0 +1,18 @@
+{% extends "accounts/_layout.html" %}
+{% load store %}
+{% block title %}My orders — {{ SITE_NAME }}{% endblock %}
+{% block account %}
+<h1 class="mb-3">My orders</h1>
+{% if orders %}
+  {% include "orders/_order_table.html" %}
+  {% if page_obj.has_other_pages %}
+  <nav aria-label="Pages"><ul class="pagination">
+    {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>{% endif %}
+    <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+    {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>{% endif %}
+  </ul></nav>
+  {% endif %}
+{% else %}
+  <div class="panel-quiet"><p class="mb-2">No orders yet.</p><a class="btn btn-primary" href="{% url 'products:shop' %}">Start shopping</a></div>
+{% endif %}
+{% endblock %}

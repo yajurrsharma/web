@@ -1,0 +1,10 @@
+{# Our policies, one click each. They open in a new tab so nothing typed in this form is lost. #}
+<div class="policy-buttons" aria-label="Our policies">
+  <span class="small text-muted">Please read:</span>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'core:page' 'terms' %}" target="_blank" rel="noopener">📄 Terms &amp; Conditions</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'core:page' 'privacy-policy' %}" target="_blank" rel="noopener">🔒 Privacy Policy</a>
+  {% if show_all %}
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'core:page' 'shipping-policy' %}" target="_blank" rel="noopener">🚚 Shipping</a>
+  <a class="btn btn-sm btn-outline-secondary" href="{% url 'core:page' 'return-refund-policy' %}" target="_blank" rel="noopener">↩ Returns &amp; Refunds</a>
+  {% endif %}
+</div>

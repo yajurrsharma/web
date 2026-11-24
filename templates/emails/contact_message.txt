@@ -1,0 +1,7 @@
+{% load store %}{% autoescape off %}From: {{ msg.name }} <{{ msg.email }}> {{ msg.phone }}
+Subject: {{ msg.subject }}
+
+{{ msg.message }}
+
+— {{ store.store_name }}
+{% endautoescape %}

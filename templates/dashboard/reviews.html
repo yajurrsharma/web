@@ -1,0 +1,33 @@
+{% extends "dashboard/_layout.html" %}
+{% load store %}
+{% block title %}Reviews — Dashboard{% endblock %}
+{% block dash %}
+<h1>Customer Reviews</h1>
+<p class="subtitle">Only customers whose order was delivered can write a review. Nothing appears on the shop until you publish it.</p>
+<div class="d-flex gap-2 mb-3 flex-wrap">
+  {% for key, label in statuses %}<a class="btn btn-sm {% if key == status %}btn-primary{% else %}btn-outline-burgundy{% endif %}" href="?status={{ key }}">{{ label }} ({{ counts|get_item:key }})</a>{% endfor %}
+</div>
+<div class="panel">
+  {% for r in reviews %}
+  <div class="d-flex flex-wrap gap-3 py-3 border-bottom">
+    <div class="flex-grow-1" style="min-width:260px">
+      <div class="fs-6" style="color:#e7a10c">{{ r.rating|stars }}</div>
+      <div><strong>{{ r.title|default:"(no headline)" }}</strong> — <a href="{{ r.product.get_absolute_url }}" target="_blank" rel="noopener">{{ r.product.name }}</a></div>
+      <div class="small text-muted">{{ r.user.full_name }} ({{ r.user.email }}) · {{ r.created_at|date:"j M Y, H:i" }}{% if r.order_item %} · order {{ r.order_item.order.order_number }}{% endif %}</div>
+      {% if r.body %}<p class="mb-1 mt-1">{{ r.body|linebreaksbr }}</p>{% endif %}
+      {% if r.photo %}<a href="{{ r.photo.url }}" target="_blank" rel="noopener"><img src="{{ r.photo.url }}" alt="Customer photo" style="width:90px;height:90px;object-fit:cover;border-radius:6px"></a>{% endif %}
+    </div>
+    {% if perms.products.change_review %}
+    <form method="post" action="{% url 'dashboard:review_action' r.pk %}" class="d-flex flex-column gap-2">
+      {% csrf_token %}<input type="hidden" name="back" value="{{ status }}">
+      {% if r.status != "approved" %}<button class="btn btn-sm btn-success" name="action" value="approve" type="submit">Publish</button>{% endif %}
+      {% if r.status != "rejected" %}<button class="btn btn-sm btn-outline-danger" name="action" value="reject" type="submit">Hide</button>{% endif %}
+    </form>
+    {% endif %}
+  </div>
+  {% empty %}
+  <p class="text-muted mb-0">Nothing here.</p>
+  {% endfor %}
+</div>
+<p class="small text-muted mt-2">Publish honest reviews, including critical ones — hiding only bad reviews misleads customers. Hide reviews with abuse, personal data, spam or content unrelated to the product.</p>
+{% endblock %}

@@ -1,0 +1,285 @@
+{% extends "dashboard/_layout.html" %}
+{% load store %}
+{% block title %}{{ order.order_number }} — Dashboard{% endblock %}
+{% block dash %}
+<div class="d-flex flex-wrap justify-content-between align-items-baseline gap-2">
+  <h1 class="mb-1">{{ order.order_number }}</h1>
+  <div class="d-flex gap-2">
+    <a class="btn btn-sm btn-primary" href="{% url 'dashboard:shipping_label' order.order_number %}" target="_blank" rel="noopener">🏷 Shipping label</a>
+    <a class="btn btn-sm btn-outline-burgundy" href="{% url 'dashboard:packing_slip' order.order_number %}" target="_blank" rel="noopener">Packing slip</a>
+    {% if invoice %}<a class="btn btn-sm btn-outline-burgundy" href="{{ invoice.get_pdf_url }}?view=1" target="_blank" rel="noopener">Invoice {{ invoice.number }}</a>{% endif %}
+  </div>
+</div>
+<p>
+  <span class="status-pill s-{{ order.status }}">{{ order.get_status_display }}</span>
+  <span class="status-pill s-{{ order.payment_status }}">Payment: {{ order.get_payment_status_display }}</span>
+  <span class="ms-1">{{ order.get_payment_method_display }}</span>
+  <span class="text-muted ms-2">Placed {{ order.created_at|date:"j M Y, g:i A" }} · {{ order.get_channel_display }}</span>
+</p>
+{% if order.admin_notes %}<div class="alert alert-warning py-2"><strong>Internal notes:</strong> {{ order.admin_notes|linebreaksbr }}</div>{% endif %}
+
+<div class="row g-4">
+  <div class="col-xl-8">
+    <div class="panel">
+      <h2 class="h5">Items</h2>
+      <div class="table-responsive">
+      <table class="table table-sm small">
+        <thead><tr><th scope="col">Item</th><th scope="col">HSN</th><th scope="col" class="text-end">Qty</th><th scope="col" class="text-end">Price</th><th scope="col" class="text-end">Disc.</th><th scope="col" class="text-end">Taxable</th><th scope="col" class="text-end">GST</th><th scope="col" class="text-end">Total</th></tr></thead>
+        <tbody>
+        {% for i in order.items.all %}
+          <tr><td>{{ i.description }}<div class="small text-muted">{{ i.sku }}</div></td><td>{{ i.hsn_code }}</td><td class="text-end">{{ i.quantity }}</td>
+            <td class="text-end">{{ i.unit_price|inr }}</td><td class="text-end">{{ i.discount|inr }}</td><td class="text-end">{{ i.taxable_value|inr }}</td>
+            <td class="text-end">{{ i.gst_rate|pct }}<div class="small">{{ i.tax_amount|inr }}</div></td><td class="text-end">{{ i.line_total|inr }}</td></tr>
+        {% endfor %}
+        {% if order.shipping_total %}
+          <tr><td colspan="5">Delivery{% if order.cod_fee %} (incl. COD fee {{ order.cod_fee|inr }}){% endif %}</td><td class="text-end">{{ order.shipping_taxable|inr }}</td><td class="text-end">{{ order.shipping_gst_rate|pct }}<div class="small">{{ order.shipping_tax|inr }}</div></td><td class="text-end">{{ order.shipping_total|inr }}</td></tr>
+        {% endif %}
+        </tbody>
+        <tfoot>
+          <tr><th colspan="5">Totals {% if order.is_intra_state is True %}(CGST {{ order.cgst_total|inr }} + SGST {{ order.sgst_total|inr }}){% elif order.is_intra_state is False %}(IGST {{ order.igst_total|inr }}){% endif %}</th>
+            <th class="text-end">{{ order.taxable_total|inr }}</th><th class="text-end">{{ order.tax_total|inr }}</th><th class="text-end">{{ order.grand_total|inr }}</th></tr>
+        </tfoot>
+      </table>
+      </div>
+      {% if order.coupon_code %}<p class="small mb-0">Coupon {{ order.coupon_code }}: −{{ order.discount_total|inr }}</p>{% endif %}
+      {% if order.refunded_total %}<p class="small mb-0">Refunded so far: {{ order.refunded_total|inr }}</p>{% endif %}
+    </div>
+
+    <div class="row g-3 mt-1">
+      <div class="col-md-6"><div class="panel h-100"><h2 class="h6">Ship to</h2>{% include "orders/_address.html" with a=order.shipping_address %}
+        {% if order.delivery_instructions %}<p class="small mt-2 mb-0"><strong>Instructions:</strong> {{ order.delivery_instructions }}</p>{% endif %}</div></div>
+      <div class="col-md-6"><div class="panel h-100"><h2 class="h6">Bill to</h2>{% include "orders/_address.html" with a=order.billing_address %}
+        <p class="small mt-2 mb-0">{{ order.email }}{% if order.customer_gstin %}<br>GSTIN {{ order.customer_gstin }}{% endif %}<br>Place of supply: {{ order.place_of_supply_name }} ({{ order.place_of_supply }})</p></div></div>
+    </div>
+
+    <div class="panel mt-4">
+      <h2 class="h5">History</h2>
+      <ol class="timeline">
+        {% for h in order.history.all %}
+        <li><div>{% if h.field == "note" %}Note{% else %}{{ h.get_field_display }}: {{ h.from_value|default:"—" }} → {{ h.to_value }}{% endif %}{% if h.note %} — {{ h.note }}{% endif %}{% if not h.visible_to_customer %} <span class="small text-muted">(internal)</span>{% endif %}</div>
+          <div class="small text-muted">{{ h.created_at|date:"j M Y, g:i A" }}{% if h.changed_by %} · {{ h.changed_by.email }}{% else %} · system{% endif %}</div></li>
+        {% endfor %}
+      </ol>
+      <form method="post" action="{% url 'dashboard:order_action' order.order_number %}" class="d-flex gap-2">
+        {% csrf_token %}<input type="hidden" name="action" value="note">
+        <label class="visually-hidden" for="note-in">Internal note</label>
+        <input class="form-control" id="note-in" name="note" maxlength="300" placeholder="Add an internal note (not visible to the customer)">
+        <button class="btn btn-outline-burgundy" type="submit">Add</button>
+      </form>
+    </div>
+
+    <div class="panel mt-4">
+      <h2 class="h5">Payments & refunds</h2>
+      <table class="table table-sm mb-2">
+        <thead><tr><th scope="col">Date</th><th scope="col">Gateway</th><th scope="col">Reference</th><th scope="col" class="text-end">Amount</th><th scope="col">Status</th></tr></thead>
+        <tbody>
+        {% for p in order.payments.all %}<tr><td>{{ p.created_at|date:"j M, g:i A" }}</td><td>{{ p.get_gateway_display }}{% if p.method_detail %} ({{ p.method_detail }}){% endif %}</td><td class="small">{{ p.gateway_payment_id|default:p.gateway_order_id|default:"—" }}{% if p.error_description %}<div class="text-danger">{{ p.error_description }}</div>{% endif %}</td><td class="text-end">{{ p.amount|inr }}</td><td>{% if p.gateway == "cod" and p.status == "created" %}To collect{% else %}{{ p.get_status_display }}{% endif %}</td></tr>{% endfor %}
+        {% for r in order.refunds.all %}<tr><td>{{ r.created_at|date:"j M, g:i A" }}</td><td>Refund — {{ r.get_method_display }}</td><td class="small">{{ r.gateway_refund_id|default:r.reference }}<div>{{ r.reason }}</div></td><td class="text-end">−{{ r.amount|inr }}</td><td>{{ r.get_status_display }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+      {% if order.payment_method == "online" %}
+      <form method="post" action="{% url 'dashboard:order_action' order.order_number %}">{% csrf_token %}<input type="hidden" name="action" value="reconcile">
+        <button class="btn btn-sm btn-outline-burgundy" type="submit">Check payment status with Razorpay</button></form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="col-xl-4">
+    {% for req in order.requests.all %}{% if req.status == "requested" or req.status == "approved" %}
+    <div class="panel mb-4" style="border-color: var(--brass)">
+      <h2 class="h5">{% if req.kind == "return" %}Problem reported{% else %}{{ req.get_kind_display }} request{% endif %} — {{ req.get_status_display }}</h2>
+      {% if req.problem %}<p class="mb-1"><strong>{{ req.get_problem_display }}</strong></p>{% endif %}
+      <p class="mb-2">“{{ req.reason }}”</p>
+      {% with photos=req.photos.all %}{% if photos %}
+      <div class="d-flex flex-wrap gap-2 mb-2">{% for ph in photos %}<a href="{{ ph.image.url }}" target="_blank" rel="noopener"><img src="{{ ph.image.url }}" alt="Customer photo {{ forloop.counter }}" style="width:84px;height:84px;object-fit:cover;border-radius:6px;border:1px solid var(--line, #ddd)"></a>{% endfor %}</div>
+      {% elif req.kind == "return" %}<p class="small text-muted mb-2">No photos attached.</p>{% endif %}{% endwith %}
+      <p class="small text-muted">{{ req.created_at|date:"j M Y, g:i A" }}</p>
+      {% if req.status == "requested" %}
+      <form method="post" action="{% url 'dashboard:request_action' req.pk %}" data-once>
+        {% csrf_token %}
+        <label class="form-label" for="rq-note-{{ req.pk }}">Note to customer</label>
+        <input class="form-control mb-2" id="rq-note-{{ req.pk }}" name="note" maxlength="500">
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary" name="action" value="approve" type="submit">Approve{% if req.kind == "cancel" and order.is_paid %} & refund{% endif %}</button>
+          <button class="btn btn-outline-burgundy" name="action" value="reject" type="submit">Reject</button>
+        </div>
+      </form>
+      {% elif req.status == "approved" and req.kind == "return" %}
+      <form method="post" action="{% url 'dashboard:request_action' req.pk %}" data-once>
+        {% csrf_token %}<input type="hidden" name="action" value="complete_return">
+        <p class="small">Complete this after the parcel is back and you have inspected it.</p>
+        <fieldset class="mb-2"><legend class="form-label fs-6">Condition after inspection</legend>
+          <div class="form-check"><input class="form-check-input" type="radio" name="restock" value="yes" id="rs-y-{{ req.pk }}"><label class="form-check-label" for="rs-y-{{ req.pk }}">Resaleable — add back to stock</label></div>
+          <div class="form-check"><input class="form-check-input" type="radio" name="restock" value="no" id="rs-n-{{ req.pk }}" checked><label class="form-check-label" for="rs-n-{{ req.pk }}">Damaged / opened — do not restock</label></div>
+        </fieldset>
+        {% if order.is_paid %}<label class="form-label" for="rf-{{ req.pk }}">Refund amount (₹)</label>
+        <input class="form-control mb-2" id="rf-{{ req.pk }}" name="refund_amount" value="{{ refundable }}" inputmode="decimal">{% endif %}
+        <label class="form-label" for="rn-{{ req.pk }}">Note</label>
+        <input class="form-control mb-2" id="rn-{{ req.pk }}" name="note" maxlength="300">
+        <button class="btn btn-primary" type="submit">Complete return</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}{% endfor %}
+
+    <div class="panel mb-4">
+      <h2 class="h5">Update order</h2>
+      {% if next_statuses %}
+      <form method="post" action="{% url 'dashboard:order_action' order.order_number %}" data-once>
+        {% csrf_token %}<input type="hidden" name="action" value="status">
+        <label class="form-label" for="st">Move to</label>
+        <select class="form-select mb-2" id="st" name="status">{% for k, v in next_statuses %}{% if k != "cancelled" %}<option value="{{ k }}">{{ v }}</option>{% endif %}{% endfor %}</select>
+        <label class="form-label" for="st-note">Note (shown to customer)</label>
+        <input class="form-control mb-2" id="st-note" name="note" maxlength="300">
+        <button class="btn btn-primary" type="submit">Update status</button>
+      </form>
+      {% if order.awaiting_online_payment %}<p class="small text-muted mt-2 mb-0">Online orders can only move forward once paid.</p>{% endif %}
+      {% else %}<p class="mb-0 text-muted">No further status changes available.</p>{% endif %}
+    </div>
+
+    {% if shipment.awb %}
+    <div class="panel mb-4" id="ship" style="border:2px solid #2563eb">
+      <h2 class="h5">🚚 Shiprocket — {{ shipment.get_stage_display }}</h2>
+      <table class="table table-sm mb-2">
+        <tr><th scope="row">Courier</th><td>{{ shipment.courier_name }}</td></tr>
+        <tr><th scope="row">AWB</th><td><strong>{{ shipment.awb }}</strong></td></tr>
+        <tr><th scope="row">Latest status</th><td>{{ shipment.status_text|default:"—" }}{% if shipment.last_update_at %}<div class="small text-muted">{{ shipment.last_update_at|date:"j M, H:i" }}</div>{% endif %}</td></tr>
+      </table>
+      <div class="d-flex flex-wrap gap-2 mb-2">
+        <form method="post" action="{% url 'dashboard:order_action' order.order_number %}" target="_blank">{% csrf_token %}
+          <button class="btn btn-sm btn-primary" name="action" value="ship_label" type="submit">🏷 Print courier label</button></form>
+        <form method="post" action="{% url 'dashboard:order_action' order.order_number %}">{% csrf_token %}
+          <button class="btn btn-sm btn-outline-burgundy" name="action" value="ship_refresh" type="submit">↻ Refresh tracking</button></form>
+        {% if shipment.tracking_url %}<a class="btn btn-sm btn-link" href="{{ shipment.tracking_url }}" target="_blank" rel="noopener">Public tracking page ↗</a>{% endif %}
+      </div>
+      <p class="small text-muted mb-2">Order status updates automatically: Shipped when the courier picks it up, Delivered on delivery. Returns (RTO) are emailed to you.</p>
+      {% if shipment.events.all %}
+      <details><summary class="small">Courier updates ({{ shipment.events.all|length }})</summary>
+        <ul class="list-unstyled small mb-0 mt-2">{% for e in shipment.events.all %}<li class="py-1 border-bottom"><strong>{{ e.status }}</strong>{% if e.location %} · {{ e.location }}{% endif %}<br><span class="text-muted">{{ e.event_time|default:e.created_at|date:"j M, H:i" }}{% if e.activity %} · {{ e.activity }}{% endif %}</span></li>{% endfor %}</ul>
+      </details>
+      {% endif %}
+    </div>
+    {% elif shipping_enabled and order.status == "confirmed" or shipping_enabled and order.status == "processing" %}
+    <div class="panel mb-4" id="ship" style="border:2px solid #2563eb">
+      <h2 class="h5">🚚 Ship with Shiprocket</h2>
+      {% if couriers %}
+      <form method="post" action="{% url 'dashboard:order_action' order.order_number %}" data-once>
+        {% csrf_token %}<input type="hidden" name="action" value="ship_book">
+        <fieldset class="mb-2"><legend class="form-label fs-6">Choose a courier</legend>
+        {% for c in couriers %}
+          <div class="form-check border-bottom py-1">
+            <input class="form-check-input" type="radio" name="courier_id" value="{{ c.id }}" id="cr{{ c.id }}"{% if forloop.first %} checked{% endif %}>
+            <label class="form-check-label w-100" for="cr{{ c.id }}"><strong>{{ c.name }}</strong>{% if c.recommended %} <span class="badge-s ok">Recommended</span>{% endif %}
+              <span class="float-end">₹{{ c.rate }}</span><br><span class="small text-muted">{% if c.etd %}Delivery by {{ c.etd }}{% elif c.days %}{{ c.days }} days{% endif %}{% if c.rating %} · rating {{ c.rating }}{% endif %}</span></label>
+          </div>
+        {% endfor %}
+        </fieldset>
+        <button class="btn btn-primary" type="submit">Book shipment</button>
+        <a class="btn btn-link" href="?">Cancel</a>
+      </form>
+      {% else %}
+      <p class="small mb-2">Book the courier, get the AWB and label, and request pickup — in one step. Tracking then updates by itself.</p>
+      <a class="btn btn-primary" href="?couriers=1#ship">Check couriers &amp; prices</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if order.status == "confirmed" or order.status == "processing" or order.status == "shipped" %}
+    <div class="panel mb-4">
+      <h2 class="h5">{% if shipping_enabled %}Sent another way? Enter tracking manually{% else %}Shipping & tracking{% endif %}</h2>
+      <form method="post" action="{% url 'dashboard:order_action' order.order_number %}">
+        {% csrf_token %}<input type="hidden" name="action" value="tracking">
+        <label class="form-label" for="cr">Courier</label><input class="form-control mb-2" id="cr" name="courier_name" value="{{ order.courier_name }}" required>
+        <label class="form-label" for="awb">Tracking / AWB number</label><input class="form-control mb-2" id="awb" name="tracking_number" value="{{ order.tracking_number }}" required>
+        <label class="form-label" for="turl">Tracking link (https, optional)</label><input class="form-control mb-2" id="turl" name="tracking_url" value="{{ order.tracking_url }}">
+        <button class="btn btn-outline-burgundy" type="submit">Save tracking</button>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if order.is_manual_payment and not order.is_paid and order.status != "cancelled" %}
+    <div class="panel mb-4" style="border:2px solid #f59e0b">
+      <h2 class="h5">{{ order.get_payment_method_display }} — check payment</h2>
+      <p class="mb-1">Amount: <strong>{{ order.grand_total|inr }}</strong>{% if order.payment_due_by %} · due by {{ order.payment_due_by|date:"j M, g:i A" }}{% endif %}</p>
+      {% if order.payment_reference %}<p class="mb-2">Customer's reference (UTR): <strong>{{ order.payment_reference }}</strong></p>
+      {% else %}<p class="small text-muted mb-2">The customer hasn't entered a reference yet. If they don't, the order is cancelled automatically when the time runs out.</p>{% endif %}
+      <form method="post" action="{% url 'dashboard:order_action' order.order_number %}" data-once>
+        {% csrf_token %}<input type="hidden" name="action" value="manual_paid">
+        <label class="form-label" for="mref">Reference in your bank / UPI statement</label>
+        <input class="form-control mb-2" id="mref" name="reference" maxlength="40" value="{{ order.payment_reference }}" required>
+        <p class="small">Only confirm after you have seen <strong>{{ order.grand_total|inr }}</strong> arrive in your account — a screenshot from the customer is not proof.</p>
+        <button class="btn btn-primary" type="submit">Confirm payment received</button>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if order.is_cod and not order.is_paid and order.status != "cancelled" %}
+    <div class="panel mb-4">
+      <h2 class="h5">Cash on Delivery</h2>
+      {% if order.status == "shipped" or order.status == "delivered" %}
+      <form method="post" action="{% url 'dashboard:order_action' order.order_number %}" data-once>
+        {% csrf_token %}<input type="hidden" name="action" value="cod_collected">
+        <p class="small">Record only after the courier has collected {{ order.grand_total|inr }}.</p>
+        <button class="btn btn-primary" type="submit">Mark {{ order.grand_total|inr }} collected</button>
+      </form>
+      {% else %}<p class="mb-0 text-muted">Collection can be recorded once the order is shipped.</p>{% endif %}
+    </div>
+    {% endif %}
+
+    <div class="panel mb-4">
+      <h2 class="h5">GST invoice</h2>
+      {% if invoice %}
+        <p class="mb-1"><a href="{{ invoice.get_pdf_url }}?view=1" target="_blank" rel="noopener">{{ invoice.number }}</a> · {{ invoice.invoice_date|date:"j M Y" }} · {{ invoice.get_status_display }}</p>
+        {% for cn in credit_notes %}<p class="mb-1 small">Credit note <a href="{{ cn.get_pdf_url }}?view=1" target="_blank" rel="noopener">{{ cn.number }}</a> — {{ cn.grand_total|inr }} ({{ cn.reason }})</p>{% endfor %}
+        {% if invoice.status != "credited" and perms.invoicing.add_invoice %}
+        <details class="mt-2"><summary>Issue a partial credit note</summary>
+          <form method="post" action="{% url 'dashboard:order_action' order.order_number %}" class="mt-2" data-once>
+            {% csrf_token %}<input type="hidden" name="action" value="credit_note">
+            {% for it in invoice.items.all %}
+              <div class="d-flex align-items-center gap-2 mb-1"><label class="flex-grow-1 small" for="cn{{ it.line_no }}">{{ it.description }} (invoiced {{ it.quantity|floatformat:"-2" }})</label>
+              <input class="form-control form-control-sm" style="width:6rem" id="cn{{ it.line_no }}" name="cn_qty_{{ it.line_no }}" inputmode="decimal"></div>
+            {% endfor %}
+            <label class="form-label mt-1" for="cn-reason">Reason</label><input class="form-control mb-2" id="cn-reason" name="note" required maxlength="200">
+            <button class="btn btn-sm btn-outline-burgundy" type="submit">Issue credit note</button>
+          </form>
+        </details>
+        {% endif %}
+      {% elif not store.can_issue_tax_invoice %}
+        <p class="mb-0 text-danger small">Tax invoices are blocked: missing {{ store.missing_invoice_fields|join:", " }} in Store settings.</p>
+      {% elif perms.invoicing.add_invoice and order.status != "pending" and order.status != "cancelled" %}
+        <p class="small text-muted">Invoices are issued automatically {{ store.get_invoice_trigger_display|lower }}. You can also issue it now.</p>
+        <form method="post" action="{% url 'dashboard:order_action' order.order_number %}" data-once>{% csrf_token %}<input type="hidden" name="action" value="invoice">
+          <button class="btn btn-outline-burgundy" type="submit">Issue invoice now</button></form>
+      {% else %}<p class="mb-0 text-muted small">Not issued yet.</p>{% endif %}
+    </div>
+
+    {% if can_refund and order.is_paid and refundable > 0 %}
+    <div class="panel mb-4">
+      <h2 class="h5">Refund</h2>
+      <form method="post" action="{% url 'dashboard:order_action' order.order_number %}" data-once>
+        {% csrf_token %}<input type="hidden" name="action" value="refund">
+        <label class="form-label" for="ra">Amount (₹, up to {{ refundable|inr }})</label>
+        <input class="form-control mb-2" id="ra" name="amount" inputmode="decimal" required>
+        <label class="form-label" for="rr">Reason</label><input class="form-control mb-2" id="rr" name="note" required maxlength="300">
+        {% if order.is_cod %}<label class="form-label" for="ref">Bank / UPI transfer reference</label><input class="form-control mb-2" id="ref" name="reference" required>
+        {% else %}<p class="small text-muted">Refunded to the customer's original payment method through Razorpay.</p>{% endif %}
+        <button class="btn btn-outline-burgundy" type="submit">Record refund</button>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if can_cancel %}
+    <div class="panel">
+      <h2 class="h5">Cancel order</h2>
+      <form method="post" action="{% url 'dashboard:order_action' order.order_number %}" data-once>
+        {% csrf_token %}<input type="hidden" name="action" value="cancel">
+        <label class="form-label" for="cx">Reason (shown to customer)</label>
+        <input class="form-control mb-2" id="cx" name="note" required maxlength="300">
+        <p class="small text-muted">Stock is restored automatically.{% if invoice %} A credit note is issued for the invoice.{% endif %}{% if order.is_paid %} Then record a refund above.{% endif %}</p>
+        <button class="btn btn-outline-danger" type="submit">Cancel order</button>
+      </form>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

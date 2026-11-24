@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}We're packing order {{ order.order_number }}{% endautoescape %}

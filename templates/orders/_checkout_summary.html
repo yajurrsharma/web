@@ -1,0 +1,11 @@
+{% load store %}
+<div class="panel position-sticky" style="top: 1rem">
+  <h2 class="h5">Your order</h2>
+  <ul class="list-unstyled small mb-2">
+    {% for item, line in items %}
+    <li class="d-flex justify-content-between gap-2 py-1"><span>{{ item.quantity }} × {{ item.variant }}</span><span>{{ line.gross|inr }}</span></li>
+    {% endfor %}
+  </ul>
+  {% include "orders/_totals.html" with quote=quote %}
+  <a class="d-inline-block mt-2 small" href="{% url 'cart:detail' %}">Edit cart or coupon</a>
+</div>

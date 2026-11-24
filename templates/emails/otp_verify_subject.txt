@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}Your {{ store.store_name }} verification code: {{ code }}{% endautoescape %}

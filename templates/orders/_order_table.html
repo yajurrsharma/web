@@ -1,0 +1,17 @@
+{% load store %}
+<div class="table-responsive">
+<table class="table align-middle">
+  <thead><tr><th scope="col">Order</th><th scope="col">Date</th><th scope="col">Total</th><th scope="col">Status</th><th scope="col">Payment</th></tr></thead>
+  <tbody>
+  {% for o in orders %}
+    <tr>
+      <td><a href="{{ o.get_absolute_url }}">{{ o.order_number }}</a></td>
+      <td>{{ o.created_at|date:"j M Y" }}</td>
+      <td>{{ o.grand_total|inr }}</td>
+      <td><span class="status-pill s-{{ o.status }}">{{ o.get_status_display }}</span></td>
+      <td><span class="status-pill s-{{ o.payment_status }}">{{ o.get_payment_status_display }}</span>{% if o.is_cod %} <span class="text-muted small">COD</span>{% endif %}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>

@@ -1,0 +1,1 @@
+{% load store %}{% autoescape off %}Action needed: {% if duplicate %}duplicate payment{% else %}payment after cancellation{% endif %} on {{ order.order_number }}{% endautoescape %}

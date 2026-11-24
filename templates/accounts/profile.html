@@ -1,0 +1,13 @@
+{% extends "accounts/_layout.html" %}
+{% block title %}Profile — {{ SITE_NAME }}{% endblock %}
+{% block account %}
+<h1 class="mb-3">Profile</h1>
+<form method="post" class="panel" style="max-width: 520px" novalidate>
+  {% csrf_token %}
+  <div class="mb-3"><label class="form-label" for="email-ro">Email</label>
+    <input class="form-control" id="email-ro" value="{{ user.email }}" readonly aria-describedby="email-help">
+    <div class="form-text" id="email-help">Your login email can't be changed online. Contact us if you need to update it.</div></div>
+  {% include "includes/form_fields.html" %}
+  <button class="btn btn-primary" type="submit">Save changes</button>
+</form>
+{% endblock %}

@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Shop all products — {{ SITE_NAME }}{% endblock %}
+{% block meta_description %}Buy agarbatti, dhoop, sambrani cups and ghee diya batti online from {{ SITE_NAME }}.{% endblock %}
+{% block content %}
+<div class="container-shop">
+  <h1 class="visually-hidden">All products</h1>
+  {% include "products/_listing.html" %}
+</div>
+{% endblock %}

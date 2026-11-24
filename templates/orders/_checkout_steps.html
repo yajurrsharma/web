@@ -1,0 +1,6 @@
+{# Progress bar for the 3-step checkout. `step` = 1, 2 or 3. #}
+<ol class="co-steps" aria-label="Checkout steps">
+  <li class="{% if step == 1 %}now{% elif step > 1 %}done{% endif %}"{% if step == 1 %} aria-current="step"{% endif %}><span>1</span> Email</li>
+  <li class="{% if step == 2 %}now{% elif step > 2 %}done{% endif %}"{% if step == 2 %} aria-current="step"{% endif %}><span>2</span> Address</li>
+  <li class="{% if step == 3 %}now{% endif %}"{% if step == 3 %} aria-current="step"{% endif %}><span>3</span> Payment</li>
+</ol>

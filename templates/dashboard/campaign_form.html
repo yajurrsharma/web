@@ -1,0 +1,22 @@
+{% extends "dashboard/_layout.html" %}
+{% block title %}{% if campaign %}Edit{% else %}New{% endif %} offer email — Dashboard{% endblock %}
+{% block dash %}
+<div class="top-actions">
+  <div><h1>{% if campaign %}Edit offer email{% else %}New offer email{% endif %}</h1>
+  <p class="subtitle mb-0">Write it, save, look at the preview and send a test to yourself before sending to customers.</p></div>
+  <a class="btn btn-secondary" href="{% url 'dashboard:campaigns' %}">Back</a>
+</div>
+<form method="post" class="panel" style="max-width:820px" novalidate>
+  {% csrf_token %}
+  {% if form.errors %}<div class="alert alert-danger">Please correct the fields marked in red.</div>{% endif %}
+  {% include "dashboard/_field.html" with field=form.subject %}
+  {% include "dashboard/_field.html" with field=form.heading %}
+  {% include "dashboard/_field.html" with field=form.message %}
+  {% include "dashboard/_field.html" with field=form.products %}
+  <div class="row">
+    <div class="col-md-5">{% include "dashboard/_field.html" with field=form.button_text %}</div>
+    <div class="col-md-7">{% include "dashboard/_field.html" with field=form.button_link %}</div>
+  </div>
+  <button class="btn btn-primary px-4" type="submit">Save &amp; preview</button>
+</form>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "dashboard/_layout.html" %}
+{% block title %}Offer Emails — Dashboard{% endblock %}
+{% block dash %}
+<div class="top-actions">
+  <div>
+    <h1>Offer Emails</h1>
+    <p class="subtitle mb-0">Send festival offers and new products to customers who agreed to receive them — one personal email each.</p>
+  </div>
+  {% if perms.campaigns.add_campaign %}<a class="btn btn-primary" href="{% url 'dashboard:campaign_create' %}">+ New offer email</a>{% endif %}
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-md-4"><div class="stat"><div class="label">Subscribers</div><div class="value">{{ subscribers }}</div><div class="hint">customers who ticked “send me offers”</div></div></div>
+  <div class="col-md-4"><div class="stat"><div class="label">Sent in the last 24 hours</div><div class="value">{{ sent_24h }} / {{ daily_limit }}</div><div class="hint">daily limit protects your email account</div></div></div>
+</div>
+{% if not subscribers %}<div class="alert alert-info">No customer has agreed to offer emails yet. They can tick “Send me offers” when they register or in their profile. Only those customers receive these emails — it is the law (DPDP Act) and keeps your emails out of spam.</div>{% endif %}
+<div class="panel">
+  <table class="table align-middle mb-0">
+    <thead><tr><th scope="col">Subject</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col"></th></tr></thead>
+    <tbody>
+    {% for c in campaigns %}
+      <tr><td><a href="{% url 'dashboard:campaign_detail' c.pk %}">{{ c.subject }}</a></td>
+        <td><span class="badge-s {% if c.status == 'sent' %}ok{% elif c.status == 'sending' %}warn{% endif %}">{{ c.get_status_display }}</span></td>
+        <td class="small">{{ c.created_at|date:"j M Y" }}</td>
+        <td class="text-end"><a class="btn btn-sm btn-outline-burgundy" href="{% url 'dashboard:campaign_detail' c.pk %}">Open</a></td></tr>
+    {% empty %}<tr><td colspan="4" class="text-muted">No offer emails yet.</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

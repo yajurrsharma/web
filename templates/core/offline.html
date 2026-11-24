@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}You're offline — {{ SITE_NAME }}{% endblock %}
+{% block robots %}<meta name="robots" content="noindex">{% endblock %}
+{% block content %}
+<div class="container text-center py-5">
+  <h1>You're offline</h1>
+  <p class="lead">Check your internet connection, then try again. Prices and stock are always loaded live.</p>
+  <a class="btn btn-primary mt-2" href="/">Try again</a>
+</div>
+{% endblock %}

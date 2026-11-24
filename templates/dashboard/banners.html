@@ -1,0 +1,59 @@
+{% extends "dashboard/_layout.html" %}
+{% block title %}Home Banners — Dashboard{% endblock %}
+{% block dash %}
+<div class="top-actions">
+  <div>
+    <h1>Home Banners</h1>
+    <p class="subtitle mb-0">The big sliding pictures at the top of your home page. Up to 6 are shown, in order.</p>
+  </div>
+  <a class="btn btn-outline-burgundy" href="{% url 'core:home' %}" target="_blank" rel="noopener">View home page ↗</a>
+</div>
+
+<div class="row g-4">
+  <div class="col-xl-7">
+    <div class="panel">
+      {% for b in banners %}
+      <div class="d-flex gap-3 align-items-center py-2 border-bottom{% if obj and obj.pk == b.pk %} bg-light{% endif %}">
+        {% if b.image %}<img src="{{ b.image.url }}" alt="" style="width:160px;height:80px;object-fit:contain;background:#f6efe2;border-radius:6px">
+        {% else %}<div style="width:160px;height:80px;border-radius:6px;background:linear-gradient(120deg,#5c1220,#e8a93b);color:#fff;font-size:12px;padding:8px;overflow:hidden">{{ b.heading }}</div>{% endif %}
+        <div class="flex-grow-1 min-w-0">
+          <div class="fw-semibold">{{ b.heading }}</div>
+          <div class="small text-muted">Order {{ b.sort_order }}{% if b.link_url %} · opens {{ b.link_url|truncatechars:40 }}{% endif %}</div>
+          {% if b.is_active %}<span class="badge-s ok">Shown</span>{% else %}<span class="badge-s warn">Hidden</span>{% endif %}
+        </div>
+        <div class="d-flex gap-1">
+          <a class="btn btn-sm btn-outline-burgundy" href="{% url 'dashboard:banner_edit' b.pk %}">Edit</a>
+          {% if perms.core.delete_banner %}
+          <form method="post" action="{% url 'dashboard:banner_delete' b.pk %}" onsubmit="return confirm('Delete this banner?')">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Delete</button></form>
+          {% endif %}
+        </div>
+      </div>
+      {% empty %}
+      <p class="text-muted mb-0">No banners yet. Add your first one with the form.</p>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-xl-5">
+    <form method="post" enctype="multipart/form-data" class="panel" novalidate>
+      {% csrf_token %}
+      <h2 class="form-section">{% if obj %}Edit banner{% else %}Add banner{% endif %}</h2>
+      {{ form.non_field_errors }}
+      {% if obj.image %}<img src="{{ obj.image.url }}" alt="" class="mb-2" style="width:100%;max-height:160px;object-fit:contain;background:#f6efe2;border-radius:6px">{% endif %}
+      {% include "dashboard/_field.html" with field=form.image %}
+      {% include "dashboard/_field.html" with field=form.heading %}
+      {% include "dashboard/_field.html" with field=form.subheading %}
+      <div class="row">
+        <div class="col-md-7">{% include "dashboard/_field.html" with field=form.link_url %}</div>
+        <div class="col-md-5">{% include "dashboard/_field.html" with field=form.link_text %}</div>
+      </div>
+      <div class="row">
+        <div class="col-6">{% include "dashboard/_field.html" with field=form.is_active %}</div>
+        <div class="col-6">{% include "dashboard/_field.html" with field=form.sort_order %}</div>
+      </div>
+      {% if can_save %}<button class="btn btn-primary" type="submit">{% if obj %}Save Changes{% else %}Add Banner{% endif %}</button>{% endif %}
+      {% if obj %}<a class="btn btn-secondary" href="{% url 'dashboard:banners' %}">Cancel</a>{% endif %}
+      {% if not can_save %}<p class="form-text mt-2">You can view banners but not change them.</p>{% endif %}
+    </form>
+  </div>
+</div>
+{% endblock %}

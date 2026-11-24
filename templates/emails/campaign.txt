@@ -1,0 +1,16 @@
+{% load store %}{% autoescape off %}Namaste {{ name }} ji,
+
+{{ campaign.heading }}
+
+{{ campaign.message }}
+{% for p in products %}
+- {{ p.name }}{% with v=p.default_variant %}{% if v %} — {{ v.price|inr_short }}{% if v.mrp > v.price %} (MRP {{ v.mrp|inr_short }}, {{ v.discount_percent }}% off){% endif %}{% endif %}{% endwith %}
+  {{ SITE_URL }}{{ p.get_absolute_url }}{% endfor %}
+{% if campaign.button_link %}
+{{ campaign.button_text|default:"Shop now" }}: {{ SITE_URL }}{{ campaign.button_link }}
+{% endif %}
+—
+You are receiving this because you chose to get offers from {{ store.store_name }}.
+Unsubscribe (one click; order emails continue): {{ unsubscribe_url }}
+{% if store.full_address %}{{ store.legal_name|default:store.store_name }}, {{ store.full_address }}{% endif %}
+{% endautoescape %}

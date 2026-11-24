@@ -1,0 +1,7 @@
+{% load store %}{% autoescape off %}Someone (hopefully you) tried to register with this email, but an account already exists.
+
+Log in: {{ SITE_URL }}/accounts/login/
+Forgot your password? {{ SITE_URL }}/accounts/password-reset/
+
+— {{ store.store_name }}
+{% endautoescape %}

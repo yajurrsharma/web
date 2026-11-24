@@ -1,0 +1,5 @@
+{% load store %}{% autoescape off %}{% if duplicate %}A second payment was captured{% else %}A payment was captured after the order was cancelled{% endif %} for order {{ order.order_number }}. Please review and refund.
+{{ SITE_URL }}/dashboard/orders/{{ order.order_number }}/
+
+— {{ store.store_name }}
+{% endautoescape %}

@@ -1,0 +1,8 @@
+{% load store %}{% autoescape off %}The courier is returning order {{ order.order_number }} to you (status: {{ shipment.status_text }}).
+AWB {{ shipment.awb }} via {{ shipment.courier_name }}. Amount {{ order.grand_total|inr }} ({{ order.get_payment_method_display }}).
+
+When the parcel arrives, inspect it, then cancel the order or record the return in the dashboard:
+{{ SITE_URL }}/dashboard/orders/{{ order.order_number }}/
+
+— {{ store.store_name }}
+{% endautoescape %}

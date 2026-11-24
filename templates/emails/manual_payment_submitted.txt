@@ -1,0 +1,8 @@
+{% load store %}{% autoescape off %}The customer says they paid {{ order.grand_total|inr }} by {{ order.get_payment_method_display }} for order {{ order.order_number }}.
+Reference (UTR): {{ order.payment_reference }}
+
+Check your bank / UPI statement. If the money has arrived, open the order and press "Confirm payment received":
+{{ SITE_URL }}/dashboard/orders/{{ order.order_number }}/
+
+— {{ store.store_name }}
+{% endautoescape %}

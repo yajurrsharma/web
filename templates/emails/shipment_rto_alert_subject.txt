@@ -1,0 +1,1 @@
+{% autoescape off %}Parcel returning: {{ order.order_number }} ({{ shipment.courier_name }} {{ shipment.awb }}){% endautoescape %}
